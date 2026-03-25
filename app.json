@@ -1,0 +1,60 @@
+{
+  "expo": {
+    "name": "Final Serve-ivor",
+    "slug": "final-serveivor",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "scheme": "finalserveivor",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0F1923"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.finalserveivor.app",
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": false
+        }
+      },
+      "associatedDomains": [
+        "applinks:finalserveivor.com",
+        "applinks:tennis-survivor.vercel.app"
+      ]
+    },
+    "android": {
+      "package": "com.finalserveivor.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#0F1923",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "finalserveivor.com",
+              "pathPrefix": "/join"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
+    "plugins": [
+      "expo-secure-store"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": ""
+      }
+    }
+  }
+}
