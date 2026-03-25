@@ -40,7 +40,7 @@ function AppNavigator() {
     <NavigationContainer
       linking={linking}
       theme={{
-        dark: true,
+        dark: false,
         colors: {
           primary: colours.primary,
           background: colours.background,
@@ -65,7 +65,7 @@ function AppNavigator() {
 export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colours.background }}>
-      <StatusBar barStyle="light-content" backgroundColor={colours.background} />
+      <StatusBar barStyle="dark-content" backgroundColor={colours.background} />
       <AuthProvider>
         <AppNavigator />
       </AuthProvider>
