@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   SafeAreaView,
   SectionList,
@@ -6,19 +6,24 @@ import {
   RefreshControl,
   View,
   Text,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
 import { usePollData } from '../hooks/usePollData';
-import { getPools, Pool } from '../api/groups';
+import { getPools, Pool, getGroupByInvite } from '../api/groups';
 import PoolCard from '../components/PoolCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 import EmptyState from '../components/EmptyState';
-import { colours, spacing, borderRadius } from '../theme';
+import { colours, spacing, borderRadius, shadows } from '../theme';
 
 type RootStackParamList = {
-  Group: { groupId: string };
+  Group: { groupId: string; drawAvailable?: boolean; tournamentStatus?: string };
+  Join: { code: string };
   Terms: undefined;
 };
 
@@ -39,12 +44,38 @@ export function PoolsScreen({ navigation }: Props) {
     [user?.id],
   );
 
+  const [inviteCode, setInviteCode] = useState('');
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteError, setInviteError] = useState<string | null>(null);
+
   const handlePoolPress = useCallback(
     (pool: Pool) => {
-      navigation.navigate('Group', { groupId: pool.id });
+      navigation.navigate('Group', {
+        groupId: pool.id,
+        drawAvailable: pool.tournament?.drawAvailable,
+        tournamentStatus: pool.tournament?.status,
+      });
     },
     [navigation],
   );
+
+  const handleJoinByCode = useCallback(async () => {
+    const code = inviteCode.trim().toUpperCase();
+    if (!code) return;
+    setInviteError(null);
+    setInviteLoading(true);
+    try {
+      const group = await getGroupByInvite(code);
+      if (group?.id) {
+        setInviteCode('');
+        navigation.navigate('Group', { groupId: group.id });
+      }
+    } catch (e: any) {
+      setInviteError('Invalid invite code');
+    } finally {
+      setInviteLoading(false);
+    }
+  }, [inviteCode, navigation]);
 
   // Group pools by status
   const sections = useMemo(() => {
@@ -103,6 +134,40 @@ export function PoolsScreen({ navigation }: Props) {
                 Pick one player per round. If they lose, you{'\u2019'}re out. Last one standing wins.
               </Text>
             </View>
+
+            {/* How it works */}
+            <View style={styles.howSection}>
+              <Text style={styles.howTitle}>How it works</Text>
+              <View style={styles.stepsRow}>
+                <View style={styles.stepCard}>
+                  <View style={styles.stepNumber}>
+                    <Text style={styles.stepNumberText}>1</Text>
+                  </View>
+                  <Text style={styles.stepLabel}>Pick a player</Text>
+                  <Text style={styles.stepDescription}>
+                    Choose one player each round before the deadline
+                  </Text>
+                </View>
+                <View style={styles.stepCard}>
+                  <View style={styles.stepNumber}>
+                    <Text style={styles.stepNumberText}>2</Text>
+                  </View>
+                  <Text style={styles.stepLabel}>They must win</Text>
+                  <Text style={styles.stepDescription}>
+                    If your player loses, you{'\u2019'}re eliminated
+                  </Text>
+                </View>
+                <View style={styles.stepCard}>
+                  <View style={styles.stepNumber}>
+                    <Text style={styles.stepNumberText}>3</Text>
+                  </View>
+                  <Text style={styles.stepLabel}>Last one wins</Text>
+                  <Text style={styles.stepDescription}>
+                    Be the last survivor to claim the prize pool
+                  </Text>
+                </View>
+              </View>
+            </View>
           </>
         }
         renderSectionHeader={({ section }) => (
@@ -121,17 +186,50 @@ export function PoolsScreen({ navigation }: Props) {
           />
         }
         ListFooterComponent={
-          <View style={styles.footer}>
-            <Text
-              style={styles.footerLink}
-              onPress={() => navigation.navigate('Terms' as any)}
-            >
-              Terms & Conditions
-            </Text>
-            <Text style={styles.footerCopy}>
-              {'\u00A9'} 2026 Final Serve-ivor {'\u00B7'} A game of skill
-            </Text>
-          </View>
+          <>
+            {/* Invite code entry */}
+            <View style={styles.inviteSection}>
+              <Text style={styles.inviteSectionTitle}>Have an invite code?</Text>
+              <View style={styles.inviteRow}>
+                <TextInput
+                  style={styles.inviteInput}
+                  placeholder="e.g. MONTECAR-406R3X"
+                  placeholderTextColor={colours.gray400}
+                  value={inviteCode}
+                  onChangeText={(t) => { setInviteCode(t); setInviteError(null); }}
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                  returnKeyType="go"
+                  onSubmitEditing={handleJoinByCode}
+                />
+                <TouchableOpacity
+                  style={[styles.inviteButton, (!inviteCode.trim() || inviteLoading) && styles.inviteButtonDisabled]}
+                  onPress={handleJoinByCode}
+                  disabled={!inviteCode.trim() || inviteLoading}
+                >
+                  {inviteLoading ? (
+                    <ActivityIndicator size="small" color={colours.white} />
+                  ) : (
+                    <Text style={styles.inviteButtonText}>Join</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+              {inviteError && <Text style={styles.inviteError}>{inviteError}</Text>}
+            </View>
+
+            {/* Footer */}
+            <View style={styles.footer}>
+              <Text
+                style={styles.footerLink}
+                onPress={() => navigation.navigate('Terms' as any)}
+              >
+                Terms & Conditions
+              </Text>
+              <Text style={styles.footerCopy}>
+                {'\u00A9'} 2026 Final Serve-ivor {'\u00B7'} A game of skill
+              </Text>
+            </View>
+          </>
         }
         refreshControl={
           <RefreshControl
@@ -195,6 +293,61 @@ const styles = StyleSheet.create({
     position: 'relative',
     zIndex: 1,
   },
+
+  // How it works
+  howSection: {
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.sm,
+  },
+  howTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colours.text,
+    marginBottom: spacing.md,
+  },
+  stepsRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  stepCard: {
+    flex: 1,
+    backgroundColor: colours.surface,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colours.border,
+    alignItems: 'center',
+  },
+  stepNumber: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colours.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
+  },
+  stepNumberText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colours.primary,
+  },
+  stepLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colours.text,
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  stepDescription: {
+    fontSize: 11,
+    color: colours.textMuted,
+    textAlign: 'center',
+    lineHeight: 15,
+  },
+
+  // Sections
   sectionHeader: {
     fontSize: 18,
     fontWeight: '700',
@@ -209,6 +362,62 @@ const styles = StyleSheet.create({
   listContent: {
     paddingBottom: spacing.xl,
   },
+
+  // Invite code section
+  inviteSection: {
+    marginHorizontal: spacing.md,
+    marginTop: spacing.xl,
+    padding: spacing.lg,
+    backgroundColor: colours.surface,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colours.border,
+  },
+  inviteSectionTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colours.text,
+    marginBottom: spacing.md,
+  },
+  inviteRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  inviteInput: {
+    flex: 1,
+    height: 44,
+    borderWidth: 1,
+    borderColor: colours.border,
+    borderRadius: borderRadius.sm,
+    paddingHorizontal: spacing.md,
+    fontSize: 14,
+    fontWeight: '500',
+    color: colours.text,
+    backgroundColor: colours.background,
+  },
+  inviteButton: {
+    height: 44,
+    paddingHorizontal: spacing.lg,
+    backgroundColor: colours.primary,
+    borderRadius: borderRadius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  inviteButtonDisabled: {
+    opacity: 0.5,
+  },
+  inviteButtonText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colours.white,
+  },
+  inviteError: {
+    fontSize: 12,
+    color: colours.danger,
+    marginTop: spacing.xs,
+  },
+
+  // Footer
   footer: {
     alignItems: 'center',
     paddingVertical: spacing.xl,

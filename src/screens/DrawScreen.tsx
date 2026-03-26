@@ -18,7 +18,7 @@ interface Section {
 
 export function DrawScreen() {
   const route = useRoute<any>();
-  const { groupId } = route.params;
+  const { groupId, drawAvailable } = route.params;
 
   const [rounds, setRounds] = useState<string[]>([]);
   const [currentRound, setCurrentRound] = useState<string | null>(null);
@@ -27,7 +27,14 @@ export function DrawScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // If draw is explicitly not available, skip API calls entirely
+  const isDrawUnavailable = drawAvailable === false;
+
   const loadData = useCallback(async () => {
+    if (isDrawUnavailable) {
+      setLoading(false);
+      return;
+    }
     try {
       const [roundsList, bracket] = await Promise.all([
         getRounds(),
@@ -64,7 +71,7 @@ export function DrawScreen() {
     } finally {
       setLoading(false);
     }
-  }, [currentRound]);
+  }, [currentRound, isDrawUnavailable]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -75,6 +82,28 @@ export function DrawScreen() {
   };
 
   if (loading) return <LoadingSpinner message="Loading draw..." />;
+
+  // Draw not yet released — show dedicated empty state
+  if (isDrawUnavailable) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.drawUnavailable}>
+          <Text style={styles.drawUnavailableEmoji}>{'\uD83C\uDFBE'}</Text>
+          <Text style={styles.drawUnavailableTitle}>Draw Not Yet Released</Text>
+          <Text style={styles.drawUnavailableMessage}>
+            The official tournament draw hasn't been published yet. Once it's released by the tournament organisers, the full bracket will appear here.
+          </Text>
+          <View style={styles.drawUnavailableCard}>
+            <Text style={styles.drawUnavailableCardIcon}>{'\uD83D\uDCC5'}</Text>
+            <Text style={styles.drawUnavailableCardText}>
+              Check back closer to the tournament start date.
+            </Text>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   if (error) return <ErrorMessage message={error} onRetry={loadData} />;
 
   // Filter sections based on current round
@@ -327,6 +356,54 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 0.5,
     textTransform: 'uppercase',
+  },
+
+  // Draw unavailable state
+  drawUnavailable: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingBottom: 60,
+  },
+  drawUnavailableEmoji: {
+    fontSize: 48,
+    marginBottom: spacing.lg,
+  },
+  drawUnavailableTitle: {
+    fontSize: 22,
+    fontWeight: '700' as const,
+    color: colours.text,
+    textAlign: 'center',
+    marginBottom: spacing.md,
+  },
+  drawUnavailableMessage: {
+    fontSize: 15,
+    color: colours.textMuted,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: spacing.xl,
+  },
+  drawUnavailableCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colours.blue50,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colours.blue100,
+    gap: spacing.sm,
+  },
+  drawUnavailableCardIcon: {
+    fontSize: 20,
+  },
+  drawUnavailableCardText: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '500' as const,
+    color: colours.blue700,
+    lineHeight: 18,
   },
 });
 

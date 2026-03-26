@@ -25,10 +25,10 @@ import { colours, spacing, typography, borderRadius, shadows } from '../theme';
 import { ROUND_LABELS } from '../utils/constants';
 
 type RootStackParamList = {
-  Group: { groupId: string };
+  Group: { groupId: string; drawAvailable?: boolean; tournamentStatus?: string };
   Pick: { groupId: string };
   Leaderboard: { groupId: string };
-  Draw: { groupId: string };
+  Draw: { groupId: string; drawAvailable?: boolean };
   PickHistory: { groupId: string };
 };
 
@@ -36,12 +36,12 @@ type GroupScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface Props {
   navigation: GroupScreenNavigationProp;
-  route: { params: { groupId: string } };
+  route: { params: { groupId: string; drawAvailable?: boolean; tournamentStatus?: string } };
 }
 
 export function GroupScreen({ navigation, route }: Props) {
   const { user } = useAuth();
-  const { groupId } = route.params;
+  const { groupId, drawAvailable, tournamentStatus } = route.params;
   const [refreshing, setRefreshing] = useState(false);
 
   const { data: group, loading: groupLoading, error: groupError, refresh: refreshGroup } = usePollData(
@@ -115,8 +115,21 @@ export function GroupScreen({ navigation, route }: Props) {
 
   const currentPick = useMemo(() => {
     if (!pickHistory || !currentRound) return null;
-    return pickHistory[pickHistory.length - 1] || null;
+    return pickHistory.find((p) => p.round === currentRound) || null;
   }, [pickHistory, currentRound]);
+
+  // Is deadline within 24 hours?
+  const isUrgent = useMemo(() => {
+    if (!nextDeadline?.lockAt) return false;
+    const lockTime = new Date(nextDeadline.lockAt).getTime();
+    const now = Date.now();
+    const hoursLeft = (lockTime - now) / (1000 * 60 * 60);
+    return hoursLeft > 0 && hoursLeft <= 24;
+  }, [nextDeadline]);
+
+  const prizePool = group?.prizePoolCents ? group.prizePoolCents / 100 : 0;
+  const entryFee = group?.entryFeeCents ? group.entryFeeCents / 100 : 0;
+  const isUpcoming = tournamentStatus === 'upcoming';
 
   const handleJoinGroup = useCallback(async () => {
     if (!user) return;
@@ -146,11 +159,13 @@ export function GroupScreen({ navigation, route }: Props) {
 
   const handleNavigate = useCallback(
     (screen: keyof RootStackParamList) => {
-      if (screen === 'Pick' || screen === 'Leaderboard' || screen === 'Draw' || screen === 'PickHistory') {
+      if (screen === 'Draw') {
+        navigation.navigate('Draw', { groupId, drawAvailable });
+      } else if (screen === 'Pick' || screen === 'Leaderboard' || screen === 'PickHistory') {
         navigation.navigate(screen, { groupId });
       }
     },
-    [navigation, groupId],
+    [navigation, groupId, drawAvailable],
   );
 
   const handleRefresh = useCallback(async () => {
@@ -215,14 +230,76 @@ export function GroupScreen({ navigation, route }: Props) {
             </View>
             <View style={[styles.statDivider]} />
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>{currentRound || '—'}</Text>
+              <Text style={styles.statValue}>{currentRound || '\u2014'}</Text>
               <Text style={styles.statLabel}>Round</Text>
+            </View>
+            <View style={[styles.statDivider]} />
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>
+                {prizePool > 0 ? `\u00A3${prizePool.toFixed(0)}` : 'Free'}
+              </Text>
+              <Text style={styles.statLabel}>{prizePool > 0 ? 'Prize' : 'Entry'}</Text>
             </View>
           </View>
         </View>
 
+        {/* Urgency banner - deadline within 24hrs */}
+        {isUrgent && isMember && !currentPick && nextDeadline?.isOpen && (
+          <TouchableOpacity
+            style={styles.urgencyBanner}
+            onPress={() => handleNavigate('Pick')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.urgencyIcon}>{'\u26A0\uFE0F'}</Text>
+            <View style={styles.urgencyContent}>
+              <Text style={styles.urgencyTitle}>Pick deadline approaching</Text>
+              <Text style={styles.urgencySubtitle}>
+                Make your {currentRound} pick before time runs out
+              </Text>
+            </View>
+            <Text style={styles.urgencyArrow}>{'\u2192'}</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Pre-launch timeline for upcoming tournaments */}
+        {isUpcoming && isMember && (
+          <View style={styles.timelineCard}>
+            <Text style={styles.timelineTitle}>Tournament Timeline</Text>
+
+            <View style={styles.timelineStep}>
+              <View style={[styles.timelineDot, styles.timelineDotDone]} />
+              <View style={styles.timelineStepContent}>
+                <Text style={styles.timelineStepTitle}>Registration open</Text>
+                <Text style={styles.timelineStepDesc}>{'\u2713'} You{'\u2019'}re registered</Text>
+              </View>
+            </View>
+
+            <View style={styles.timelineLine} />
+
+            <View style={styles.timelineStep}>
+              <View style={[styles.timelineDot, drawAvailable ? styles.timelineDotDone : styles.timelineDotPending]} />
+              <View style={styles.timelineStepContent}>
+                <Text style={styles.timelineStepTitle}>Draw released</Text>
+                <Text style={styles.timelineStepDesc}>
+                  {drawAvailable ? '\u2713 Draw available' : 'Pending tournament draw'}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.timelineLine} />
+
+            <View style={styles.timelineStep}>
+              <View style={[styles.timelineDot, styles.timelineDotPending]} />
+              <View style={styles.timelineStepContent}>
+                <Text style={styles.timelineStepTitle}>Tournament begins</Text>
+                <Text style={styles.timelineStepDesc}>Pick window opens when the draw is released</Text>
+              </View>
+            </View>
+          </View>
+        )}
+
         {/* Survivor Meter */}
-        {group.members && group.members.length > 0 && (
+        {group.members && group.members.length > 0 && !isUpcoming && (
           <View style={styles.survivorCard}>
             <Text style={styles.survivorLabel}>Survivor Meter</Text>
             <View style={styles.survivorCounts}>
@@ -700,6 +777,96 @@ const styles = StyleSheet.create({
     color: colours.white,
     fontWeight: '700',
     fontSize: 12,
+  },
+
+  /* Urgency Banner */
+  urgencyBanner: {
+    backgroundColor: '#fef3c7',
+    borderWidth: 1,
+    borderColor: '#fbbf24',
+    borderRadius: borderRadius.md,
+    marginHorizontal: spacing.md,
+    marginTop: spacing.md,
+    padding: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  urgencyIcon: {
+    fontSize: 20,
+  },
+  urgencyContent: {
+    flex: 1,
+  },
+  urgencyTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#92400e',
+    marginBottom: 2,
+  },
+  urgencySubtitle: {
+    fontSize: 12,
+    color: '#92400e',
+    opacity: 0.8,
+  },
+  urgencyArrow: {
+    fontSize: 18,
+    color: '#92400e',
+    fontWeight: '700',
+  },
+
+  /* Pre-launch Timeline */
+  timelineCard: {
+    backgroundColor: colours.surface,
+    borderRadius: borderRadius.md,
+    padding: spacing.lg,
+    marginHorizontal: spacing.md,
+    marginTop: spacing.md,
+    borderWidth: 1,
+    borderColor: colours.border,
+  },
+  timelineTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colours.text,
+    marginBottom: spacing.lg,
+  },
+  timelineStep: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.md,
+  },
+  timelineDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginTop: 3,
+  },
+  timelineDotDone: {
+    backgroundColor: colours.primary,
+  },
+  timelineDotPending: {
+    backgroundColor: colours.gray300,
+  },
+  timelineStepContent: {
+    flex: 1,
+  },
+  timelineStepTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colours.text,
+    marginBottom: 2,
+  },
+  timelineStepDesc: {
+    fontSize: 12,
+    color: colours.textMuted,
+  },
+  timelineLine: {
+    width: 2,
+    height: 20,
+    backgroundColor: colours.gray200,
+    marginLeft: 5,
+    marginVertical: 4,
   },
 
   /* Join Button */

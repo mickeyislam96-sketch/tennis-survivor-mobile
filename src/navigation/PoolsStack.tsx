@@ -12,10 +12,10 @@ import { colours } from '../theme';
 
 export type PoolsStackParamList = {
   PoolsList: undefined;
-  Group: { groupId: string };
+  Group: { groupId: string; drawAvailable?: boolean; tournamentStatus?: string };
   Pick: { groupId: string };
   Leaderboard: { groupId: string };
-  Draw: { groupId: string };
+  Draw: { groupId: string; drawAvailable?: boolean };
   PickHistory: { groupId: string };
   Join: { code: string };
   Terms: undefined;
