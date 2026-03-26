@@ -16,10 +16,12 @@ const PoolCard: React.FC<PoolCardProps> = ({ pool, onPress }) => {
   const isFree = pool.entryFeeCents === 0;
 
   const location = pool.tournament?.location || pool.location || '';
+  const surface = pool.tournament?.surface || '';
+  const tier = pool.tournament?.tier || '';
   const startDate = pool.tournament?.startDate || pool.startDate || '';
   const drawAvailable = pool.tournament?.drawAvailable ?? pool.drawAvailable;
 
-  // Determine if tournament is effectively over (completed or all eliminated)
+  // Determine if tournament is effectively over
   const allEliminated = isActive && pool.aliveCount === 0 && pool.memberCount > 0;
   const isClosed = isCompleted || allEliminated;
 
@@ -34,9 +36,16 @@ const PoolCard: React.FC<PoolCardProps> = ({ pool, onPress }) => {
   const getCta = () => {
     if (isClosed) return 'View Results \u2192';
     if (isActive) return 'View Pool \u2192';
-    if (isUpcoming) return isFree ? 'Enter Free \u2192' : 'Register \u2192';
+    if (isUpcoming) return isFree ? 'Join pool free \u2192' : 'Register \u2192';
     return 'View \u2192';
   };
+
+  // Build meta line: "ATP Masters 1000 · Monte Carlo, Monaco · Clay (outdoor)"
+  const metaParts: string[] = [];
+  if (tier) metaParts.push(tier);
+  if (location) metaParts.push(location);
+  if (surface) metaParts.push(surface);
+  const metaLine = metaParts.join(' \u00B7 ');
 
   return (
     <TouchableOpacity
@@ -44,72 +53,73 @@ const PoolCard: React.FC<PoolCardProps> = ({ pool, onPress }) => {
       onPress={onPress}
       activeOpacity={0.8}
     >
-      {/* Top row: name, badge, entry fee */}
-      <View style={styles.topRow}>
-        <View style={styles.titleSection}>
-          <View style={styles.badgeWrapper}>
-            {getBadge()}
-          </View>
-          <Text style={[styles.name, isClosed && styles.nameClosed]}>
-            {pool.name || pool.tournament?.name || 'Pool'}
-          </Text>
-          {location ? (
-            <Text style={styles.meta}>
-              {location}
-              {startDate ? ` \u00B7 ${formatDate(startDate)}` : ''}
-            </Text>
-          ) : null}
-        </View>
-
-        <View style={styles.entryBadge}>
-          {isFree ? (
-            <Text style={styles.entryFree}>Free</Text>
-          ) : (
-            <Text style={styles.entryPaid}>
-              \u00A3{((pool.entryFeeCents || 0) / 100).toFixed(0)}
-            </Text>
-          )}
-        </View>
+      {/* Badge */}
+      <View style={styles.badgeWrapper}>
+        {getBadge()}
       </View>
 
-      {/* Divider */}
-      <View style={styles.divider} />
+      {/* Tournament name */}
+      <Text style={[styles.name, isClosed && styles.nameClosed]}>
+        {pool.name || pool.tournament?.name || 'Pool'}
+      </Text>
 
-      {/* Bottom row: stats and CTA */}
-      <View style={styles.bottomRow}>
-        <View style={styles.statsList}>
-          <Text style={styles.stat}>
-            {'\uD83D\uDC65'} {pool.memberCount || 0} players
-          </Text>
-          {isActive && !allEliminated && (
-            <Text style={[styles.stat, { color: colours.success }]}>
-              {'\u2713'} {pool.aliveCount || 0} alive
-            </Text>
-          )}
-          {allEliminated && (
-            <Text style={[styles.stat, { color: colours.danger }]}>
-              {'\u2717'} All eliminated
-            </Text>
-          )}
-          {isCompleted && (
-            <Text style={[styles.stat, { color: colours.textMuted }]}>
-              Tournament over
-            </Text>
-          )}
-          {isUpcoming && !drawAvailable && (
-            <Text style={styles.stat}>{'\uD83D\uDCC5'} Draw TBC</Text>
-          )}
-          {isUpcoming && startDate && (
-            <Text style={styles.stat}>{'\uD83D\uDCC5'} Starts {formatDate(startDate)}</Text>
-          )}
-        </View>
+      {/* Meta line */}
+      {metaLine ? (
+        <Text style={styles.meta}>{metaLine}</Text>
+      ) : location ? (
+        <Text style={styles.meta}>
+          {location}
+          {startDate ? ` \u00B7 ${formatDate(startDate)}` : ''}
+        </Text>
+      ) : null}
 
-        <View style={styles.ctaSection}>
-          <Text style={[styles.ctaText, isClosed && styles.ctaTextClosed]}>
-            {getCta()}
+      {/* Info lines */}
+      <View style={styles.infoLines}>
+        {isFree ? (
+          <Text style={styles.infoLine}>Free entry</Text>
+        ) : (
+          <Text style={styles.infoLine}>
+            {'\u00A3'}{((pool.entryFeeCents || 0) / 100).toFixed(0)} entry
           </Text>
-        </View>
+        )}
+
+        {startDate && (
+          <Text style={styles.infoLine}>Starts {formatDate(startDate)}</Text>
+        )}
+
+        {(pool.memberCount || 0) > 0 && (
+          <Text style={styles.infoLine}>
+            {pool.memberCount} already registered
+          </Text>
+        )}
+
+        {isActive && !allEliminated && (
+          <Text style={[styles.infoLine, { color: colours.success }]}>
+            {'\u2713'} {pool.aliveCount || 0} alive
+          </Text>
+        )}
+
+        {allEliminated && (
+          <Text style={[styles.infoLine, { color: colours.danger }]}>
+            {'\u2717'} All eliminated
+          </Text>
+        )}
+
+        {isCompleted && (
+          <Text style={[styles.infoLine, { color: colours.textMuted }]}>
+            Tournament over
+          </Text>
+        )}
+
+        {isUpcoming && !drawAvailable && (
+          <Text style={styles.infoLine}>Draw TBC</Text>
+        )}
       </View>
+
+      {/* CTA */}
+      <Text style={[styles.ctaText, isClosed && styles.ctaTextClosed]}>
+        {getCta()}
+      </Text>
     </TouchableOpacity>
   );
 };
@@ -135,18 +145,8 @@ const styles = StyleSheet.create({
   cardClosed: {
     opacity: 0.7,
   },
-  topRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: spacing.sm,
-  },
-  titleSection: {
-    flex: 1,
-    marginRight: spacing.md,
-  },
   badgeWrapper: {
-    marginBottom: spacing.xs,
+    marginBottom: spacing.sm,
   },
   name: {
     fontSize: 17,
@@ -162,57 +162,19 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colours.textMuted,
     fontWeight: '500' as const,
+    marginBottom: spacing.sm,
   },
-  entryBadge: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  entryFree: {
-    fontWeight: '700' as const,
-    fontSize: 12,
-    color: '#15803d',
-    backgroundColor: '#f0fdf4',
-    paddingVertical: 3,
-    paddingHorizontal: 8,
-    borderRadius: borderRadius.xs,
-    overflow: 'hidden',
-  },
-  entryPaid: {
-    fontWeight: '700' as const,
-    fontSize: 12,
-    color: '#2563eb',
-    backgroundColor: '#eff6ff',
-    paddingVertical: 3,
-    paddingHorizontal: 8,
-    borderRadius: borderRadius.xs,
-    overflow: 'hidden',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colours.border,
-    marginVertical: spacing.sm,
-  },
-  bottomRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    paddingTop: spacing.xs,
-  },
-  statsList: {
-    flex: 1,
+  infoLines: {
     gap: 4,
+    marginBottom: spacing.md,
   },
-  stat: {
-    fontSize: 12.5,
-    color: colours.textMuted,
+  infoLine: {
+    fontSize: 13,
+    color: colours.textSecondary,
     fontWeight: '500' as const,
   },
-  ctaSection: {
-    marginLeft: spacing.lg,
-    justifyContent: 'center',
-  },
   ctaText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700' as const,
     color: colours.primary,
   },

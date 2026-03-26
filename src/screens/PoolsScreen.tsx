@@ -20,6 +20,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 import EmptyState from '../components/EmptyState';
 import { colours, spacing, borderRadius, shadows } from '../theme';
+import { useCountdown } from '../hooks/useCountdown';
 
 type RootStackParamList = {
   Group: { groupId: string; drawAvailable?: boolean; tournamentStatus?: string };
@@ -47,6 +48,32 @@ export function PoolsScreen({ navigation }: Props) {
   const [inviteCode, setInviteCode] = useState('');
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
+
+  // Find the featured upcoming pool for hero CTA
+  const featuredPool = useMemo(() => {
+    if (!pools) return null;
+    return pools.find((p) => (p.tournament?.status || p.status) === 'upcoming') || null;
+  }, [pools]);
+
+  // Countdown to featured pool start date
+  const featuredStartDate = featuredPool?.tournament?.startDate || featuredPool?.startDate || null;
+  const { display: countdownDisplay, isExpired: countdownExpired } = useCountdown(featuredStartDate);
+
+  // Social proof: total registered for upcoming pools
+  const upcomingRegisteredCount = useMemo(() => {
+    if (!pools) return 0;
+    return pools
+      .filter((p) => (p.tournament?.status || p.status) === 'upcoming')
+      .reduce((sum, p) => sum + (p.memberCount || 0), 0);
+  }, [pools]);
+
+  const featuredPoolName = useMemo(() => {
+    if (!featuredPool) return '';
+    const name = featuredPool.name || featuredPool.tournament?.name || '';
+    // Extract short name: "Rolex Monte-Carlo Masters 2026" -> "Monte Carlo"
+    if (name.toLowerCase().includes('monte')) return 'Monte Carlo';
+    return name.split(' ').slice(0, 2).join(' ');
+  }, [featuredPool]);
 
   const handlePoolPress = useCallback(
     (pool: Pool) => {
@@ -128,11 +155,33 @@ export function PoolsScreen({ navigation }: Props) {
             {/* Green hero banner */}
             <View style={styles.heroBanner}>
               <View style={styles.heroOverlay} />
-              <Text style={styles.eyebrow}>TENNIS SURVIVOR</Text>
+              <Text style={styles.eyebrow}>TENNIS SURVIVOR POOL</Text>
               <Text style={styles.heroTitle}>Final Serve-ivor</Text>
               <Text style={styles.heroSubtitle}>
-                Pick one player per round. If they lose, you{'\u2019'}re out. Last one standing wins.
+                Pick one player per round. If they lose, you{'\u2019'}re out.{'\n'}Last one standing takes the entire prize pool.
               </Text>
+
+              {/* Hero CTA button */}
+              {featuredPool && (
+                <TouchableOpacity
+                  style={styles.heroCta}
+                  onPress={() => handlePoolPress(featuredPool)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.heroCtaText}>
+                    Enter {featuredPoolName} free {'\u2192'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              {/* Countdown badge */}
+              {featuredPool && !countdownExpired && (
+                <View style={styles.heroCountdownBadge}>
+                  <Text style={styles.heroCountdownText}>
+                    {'\uD83C\uDFBE'} {featuredPoolName} starts in {countdownDisplay}
+                  </Text>
+                </View>
+              )}
             </View>
 
             {/* How it works */}
@@ -143,27 +192,27 @@ export function PoolsScreen({ navigation }: Props) {
                   <View style={styles.stepNumber}>
                     <Text style={styles.stepNumberText}>1</Text>
                   </View>
-                  <Text style={styles.stepLabel}>Pick a player</Text>
+                  <Text style={styles.stepLabel}>Enter a pool</Text>
                   <Text style={styles.stepDescription}>
-                    Choose one player each round before the deadline
+                    Join an open tournament pool, or use a friend{'\u2019'}s invite code to enter their private group.
                   </Text>
                 </View>
                 <View style={styles.stepCard}>
                   <View style={styles.stepNumber}>
                     <Text style={styles.stepNumberText}>2</Text>
                   </View>
-                  <Text style={styles.stepLabel}>They must win</Text>
+                  <Text style={styles.stepLabel}>Pick one player</Text>
                   <Text style={styles.stepDescription}>
-                    If your player loses, you{'\u2019'}re eliminated
+                    Each round, pick one player you think will win. Choose wisely: you can never pick the same player twice.
                   </Text>
                 </View>
                 <View style={styles.stepCard}>
                   <View style={styles.stepNumber}>
                     <Text style={styles.stepNumberText}>3</Text>
                   </View>
-                  <Text style={styles.stepLabel}>Last one wins</Text>
+                  <Text style={styles.stepLabel}>Last one standing wins</Text>
                   <Text style={styles.stepDescription}>
-                    Be the last survivor to claim the prize pool
+                    If your player loses, you{'\u2019'}re eliminated. Outlast every other player in your pool and take the entire prize pool.
                   </Text>
                 </View>
               </View>
@@ -171,13 +220,29 @@ export function PoolsScreen({ navigation }: Props) {
           </>
         }
         renderSectionHeader={({ section }) => (
-          <Text style={styles.sectionHeader}>{section.title}</Text>
+          <View style={styles.sectionHeaderRow}>
+            <View style={styles.sectionHeaderAccent} />
+            <Text style={styles.sectionHeader}>{section.title}</Text>
+          </View>
         )}
         renderItem={({ item }) => (
           <View style={styles.cardContainer}>
             <PoolCard pool={item} onPress={() => handlePoolPress(item)} />
           </View>
         )}
+        renderSectionFooter={({ section }) => {
+          // Show social proof banner after upcoming pools section
+          if (section.title === 'Upcoming' && upcomingRegisteredCount > 0) {
+            return (
+              <View style={styles.socialProof}>
+                <Text style={styles.socialProofText}>
+                  {'\uD83C\uDFBE'} {upcomingRegisteredCount} player{upcomingRegisteredCount !== 1 ? 's' : ''} already registered for {featuredPoolName}
+                </Text>
+              </View>
+            );
+          }
+          return null;
+        }}
         ListEmptyComponent={
           <EmptyState
             icon={'\uD83C\uDFBE'}
@@ -190,6 +255,7 @@ export function PoolsScreen({ navigation }: Props) {
             {/* Invite code entry */}
             <View style={styles.inviteSection}>
               <Text style={styles.inviteSectionTitle}>Have an invite code?</Text>
+              <Text style={styles.inviteSubtitle}>Enter a private group invite code below.</Text>
               <View style={styles.inviteRow}>
                 <TextInput
                   style={styles.inviteInput}
@@ -226,7 +292,7 @@ export function PoolsScreen({ navigation }: Props) {
                 Terms & Conditions
               </Text>
               <Text style={styles.footerCopy}>
-                {'\u00A9'} 2026 Final Serve-ivor {'\u00B7'} A game of skill
+                {'\u00A9'} 2026 Final Serve-ivor {'\u00B7'} Outsmart. Outlast. Win.
               </Text>
             </View>
           </>
@@ -293,6 +359,37 @@ const styles = StyleSheet.create({
     position: 'relative',
     zIndex: 1,
   },
+  heroCta: {
+    backgroundColor: colours.white,
+    borderRadius: borderRadius.sm,
+    paddingVertical: 12,
+    paddingHorizontal: spacing.lg,
+    alignSelf: 'flex-start',
+    marginTop: spacing.md,
+    position: 'relative',
+    zIndex: 1,
+  },
+  heroCtaText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colours.primary,
+    letterSpacing: -0.2,
+  },
+  heroCountdownBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: borderRadius.full,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    alignSelf: 'flex-start',
+    marginTop: spacing.sm,
+    position: 'relative',
+    zIndex: 1,
+  },
+  heroCountdownText: {
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontWeight: '600',
+  },
 
   // How it works
   howSection: {
@@ -348,13 +445,38 @@ const styles = StyleSheet.create({
   },
 
   // Sections
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.lg,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.md,
+    gap: spacing.sm,
+  },
+  sectionHeaderAccent: {
+    width: 3,
+    height: 20,
+    backgroundColor: colours.primary,
+    borderRadius: 2,
+  },
   sectionHeader: {
     fontSize: 18,
     fontWeight: '700',
     color: colours.text,
-    marginTop: spacing.lg,
-    marginBottom: spacing.md,
+  },
+  socialProof: {
+    backgroundColor: colours.primaryLight,
+    borderRadius: borderRadius.sm,
+    paddingVertical: 10,
     paddingHorizontal: spacing.md,
+    marginHorizontal: spacing.md,
+    marginTop: spacing.sm,
+    alignItems: 'center',
+  },
+  socialProofText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colours.primaryDark,
   },
   cardContainer: {
     paddingHorizontal: spacing.md,
@@ -377,6 +499,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: colours.text,
+    marginBottom: spacing.xs,
+  },
+  inviteSubtitle: {
+    fontSize: 13,
+    color: colours.textMuted,
     marginBottom: spacing.md,
   },
   inviteRow: {

@@ -20,6 +20,17 @@ export interface Group {
   adminUserId: string;
   createdAt: string;
   members?: GroupMember[];
+  tournament?: {
+    id: string;
+    name: string;
+    location: string;
+    surface?: string;
+    tier?: string;
+    drawAvailable: boolean;
+    drawDate?: string;
+    startDate: string;
+    status: string;
+  };
 }
 
 export interface Pool {
@@ -29,11 +40,17 @@ export interface Pool {
   entryFeeCents: number;
   prizePoolCents: number;
   tournamentId: string;
+  status?: string;
+  startDate?: string;
+  location?: string;
   tournament?: {
     id: string;
     name: string;
     location: string;
+    surface?: string;
+    tier?: string;
     drawAvailable: boolean;
+    drawDate?: string;
     startDate: string;
     status: string;
   };

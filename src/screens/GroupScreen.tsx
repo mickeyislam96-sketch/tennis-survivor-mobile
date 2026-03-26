@@ -214,33 +214,57 @@ export function GroupScreen({ navigation, route }: Props) {
         <View style={styles.heroBanner}>
           <View style={styles.heroOverlay} />
 
-          <Text style={styles.eyebrow}>{group.tournamentId?.toUpperCase() || 'TOURNAMENT'}</Text>
+          <Text style={styles.eyebrow}>
+            {'\uD83C\uDFBE'} {group.name || group.tournamentId?.toUpperCase() || 'TOURNAMENT'}
+            {group.tournament?.tier ? ` \u00B7 ${group.tournament.tier}` : ''}
+          </Text>
           <Text style={styles.heroTitle}>{group.name}</Text>
 
-          {/* Stats row */}
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{totalMembers}</Text>
-              <Text style={styles.statLabel}>Players</Text>
+          {/* Stats row - different for upcoming vs active */}
+          {isUpcoming ? (
+            <View style={styles.statsRow}>
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>
+                  {entryFee > 0 ? `\u00A3${entryFee.toFixed(0)}` : 'Free'}
+                </Text>
+                <Text style={styles.statLabel}>Entry</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{formatShortDate(group.tournament?.startDate)}</Text>
+                <Text style={styles.statLabel}>Starts</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{totalMembers}</Text>
+                <Text style={styles.statLabel}>Registered</Text>
+              </View>
             </View>
-            <View style={[styles.statDivider]} />
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{aliveCount}</Text>
-              <Text style={styles.statLabel}>Alive</Text>
+          ) : (
+            <View style={styles.statsRow}>
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{totalMembers}</Text>
+                <Text style={styles.statLabel}>Players</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{aliveCount}</Text>
+                <Text style={styles.statLabel}>Alive</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{currentRound || '\u2014'}</Text>
+                <Text style={styles.statLabel}>Round</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>
+                  {prizePool > 0 ? `\u00A3${prizePool.toFixed(0)}` : 'Free'}
+                </Text>
+                <Text style={styles.statLabel}>{prizePool > 0 ? 'Prize' : 'Entry'}</Text>
+              </View>
             </View>
-            <View style={[styles.statDivider]} />
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{currentRound || '\u2014'}</Text>
-              <Text style={styles.statLabel}>Round</Text>
-            </View>
-            <View style={[styles.statDivider]} />
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>
-                {prizePool > 0 ? `\u00A3${prizePool.toFixed(0)}` : 'Free'}
-              </Text>
-              <Text style={styles.statLabel}>{prizePool > 0 ? 'Prize' : 'Entry'}</Text>
-            </View>
-          </View>
+          )}
         </View>
 
         {/* Urgency banner - deadline within 24hrs */}
@@ -262,15 +286,15 @@ export function GroupScreen({ navigation, route }: Props) {
         )}
 
         {/* Pre-launch timeline for upcoming tournaments */}
-        {isUpcoming && isMember && (
+        {isUpcoming && (
           <View style={styles.timelineCard}>
-            <Text style={styles.timelineTitle}>Tournament Timeline</Text>
-
             <View style={styles.timelineStep}>
-              <View style={[styles.timelineDot, styles.timelineDotDone]} />
+              <View style={[styles.timelineDot, isMember ? styles.timelineDotDone : styles.timelineDotPending]} />
               <View style={styles.timelineStepContent}>
                 <Text style={styles.timelineStepTitle}>Registration open</Text>
-                <Text style={styles.timelineStepDesc}>{'\u2713'} You{'\u2019'}re registered</Text>
+                <Text style={styles.timelineStepDesc}>
+                  {isMember ? '\u2713 You\u2019re registered' : 'Join now to secure your spot'}
+                </Text>
               </View>
             </View>
 
@@ -281,7 +305,9 @@ export function GroupScreen({ navigation, route }: Props) {
               <View style={styles.timelineStepContent}>
                 <Text style={styles.timelineStepTitle}>Draw released</Text>
                 <Text style={styles.timelineStepDesc}>
-                  {drawAvailable ? '\u2713 Draw available' : 'Pending tournament draw'}
+                  {drawAvailable
+                    ? '\u2713 Draw available'
+                    : `${formatTimelineDate(group.tournament?.drawDate)} \u00B7 pick window opens`}
                 </Text>
               </View>
             </View>
@@ -292,7 +318,10 @@ export function GroupScreen({ navigation, route }: Props) {
               <View style={[styles.timelineDot, styles.timelineDotPending]} />
               <View style={styles.timelineStepContent}>
                 <Text style={styles.timelineStepTitle}>Tournament begins</Text>
-                <Text style={styles.timelineStepDesc}>Pick window opens when the draw is released</Text>
+                <Text style={styles.timelineStepDesc}>
+                  {formatTimelineDate(group.tournament?.startDate)}
+                  {group.tournament?.location ? ` \u00B7 ${group.tournament.location}` : ''}
+                </Text>
               </View>
             </View>
           </View>
@@ -431,13 +460,30 @@ export function GroupScreen({ navigation, route }: Props) {
 
         {/* Join Button */}
         {!isMember && (
-          <TouchableOpacity
-            style={[styles.joinButton, shadows.greenLg]}
-            onPress={handleJoinGroup}
-          >
-            <Text style={styles.joinButtonText}>Join This Pool</Text>
-          </TouchableOpacity>
+          <View style={styles.joinSection}>
+            <TouchableOpacity
+              style={[styles.joinButton, shadows.greenLg]}
+              onPress={handleJoinGroup}
+            >
+              <Text style={styles.joinButtonText}>
+                {entryFee > 0 ? `Join \u00B7 \u00A3${entryFee.toFixed(0)} \u2192` : 'Join free \u2192'}
+              </Text>
+            </TouchableOpacity>
+            {!user && (
+              <Text style={styles.joinHint}>You{'\u2019'}ll create a free account to join</Text>
+            )}
+          </View>
         )}
+
+        {/* Footer */}
+        <View style={styles.footerSection}>
+          <TouchableOpacity onPress={() => navigation.navigate('Terms' as any)}>
+            <Text style={styles.footerLink}>Terms & Conditions</Text>
+          </TouchableOpacity>
+          <Text style={styles.footerCopy}>
+            {'\u00A9'} 2026 Final Serve-ivor {'\u00B7'} Outsmart. Outlast. Win.
+          </Text>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -470,6 +516,32 @@ function NavCard({
       <Text style={styles.navDescription}>{description}</Text>
     </TouchableOpacity>
   );
+}
+
+/**
+ * Format a date to short form like "Sun 5 Apr"
+ */
+function formatShortDate(dateStr?: string | null): string {
+  if (!dateStr) return '\u2014';
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+  } catch {
+    return '\u2014';
+  }
+}
+
+/**
+ * Format a date for timeline like "Sat 4 Apr"
+ */
+function formatTimelineDate(dateStr?: string | null): string {
+  if (!dateStr) return 'TBC';
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+  } catch {
+    return 'TBC';
+  }
 }
 
 /**
@@ -869,21 +941,50 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
 
-  /* Join Button */
+  /* Join Section */
+  joinSection: {
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.md,
+    alignItems: 'center',
+  },
   joinButton: {
     backgroundColor: colours.primary,
     borderRadius: borderRadius.md,
-    marginHorizontal: spacing.md,
-    marginBottom: spacing.md,
     paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.xl,
     alignItems: 'center',
     justifyContent: 'center',
+    alignSelf: 'stretch',
   },
   joinButtonText: {
     color: colours.white,
     fontWeight: '800',
     fontSize: 16,
     letterSpacing: -0.3,
+  },
+  joinHint: {
+    fontSize: 12,
+    color: colours.textMuted,
+    marginTop: spacing.sm,
+    textAlign: 'center',
+  },
+
+  /* Footer */
+  footerSection: {
+    alignItems: 'center',
+    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.md,
+    gap: spacing.xs,
+  },
+  footerLink: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colours.primary,
+    marginBottom: spacing.xs,
+  },
+  footerCopy: {
+    fontSize: 12,
+    color: colours.textMuted,
   },
 });
 
