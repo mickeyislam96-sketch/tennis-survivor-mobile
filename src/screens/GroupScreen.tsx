@@ -81,10 +81,11 @@ export function GroupScreen({ navigation, route }: Props) {
     return group?.members?.length ?? 0;
   }, [group]);
 
-  const survivalPercentage = useMemo(() => {
+  // Elimination percentage: 0% = nobody eliminated, 100% = everyone eliminated
+  const eliminationPercentage = useMemo(() => {
     if (totalMembers === 0) return 0;
-    return (aliveCount / totalMembers) * 100;
-  }, [aliveCount, totalMembers]);
+    return (eliminatedCount / totalMembers) * 100;
+  }, [eliminatedCount, totalMembers]);
 
   const nextDeadline = useMemo(() => {
     if (!deadlines) return null;
@@ -234,11 +235,15 @@ export function GroupScreen({ navigation, route }: Props) {
                 style={[
                   styles.trackFill,
                   {
-                    width: `${survivalPercentage}%`,
-                    backgroundColor: getSurvivalColor(survivalPercentage),
+                    width: `${eliminationPercentage}%`,
+                    backgroundColor: getEliminationColor(eliminationPercentage),
                   },
                 ]}
               />
+            </View>
+            <View style={styles.trackLabels}>
+              <Text style={styles.trackLabelText}>0% eliminated</Text>
+              <Text style={styles.trackLabelText}>100%</Text>
             </View>
           </View>
         )}
@@ -325,6 +330,12 @@ export function GroupScreen({ navigation, route }: Props) {
               description="Invite friends"
               onPress={handleShare}
             />
+            <NavCard
+              emoji="📄"
+              title="T&Cs"
+              description="Terms & conditions"
+              onPress={() => navigation.navigate('Terms' as any)}
+            />
           </View>
         )}
 
@@ -385,9 +396,11 @@ function NavCard({
 }
 
 /**
- * Determine fill colour based on survival percentage
+ * Determine fill colour based on elimination percentage.
+ * Low elimination = green, medium = amber, high = red.
  */
-function getSurvivalColor(percentage: number): string {
+function getEliminationColor(percentage: number): string {
+  if (percentage <= 0) return colours.success;
   if (percentage < 50) return colours.success;
   if (percentage < 80) return colours.warning;
   return colours.danger;
@@ -520,6 +533,15 @@ const styles = StyleSheet.create({
   trackFill: {
     height: '100%',
     borderRadius: borderRadius.xs,
+  },
+  trackLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 4,
+  },
+  trackLabelText: {
+    fontSize: 11,
+    color: colours.textMuted,
   },
 
   /* Deadline Section */

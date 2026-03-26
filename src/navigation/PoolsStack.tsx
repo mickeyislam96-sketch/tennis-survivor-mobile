@@ -7,6 +7,7 @@ import LeaderboardScreen from '../screens/LeaderboardScreen';
 import DrawScreen from '../screens/DrawScreen';
 import PickHistoryScreen from '../screens/PickHistoryScreen';
 import JoinScreen from '../screens/JoinScreen';
+import TermsScreen from '../screens/TermsScreen';
 import { colours } from '../theme';
 
 export type PoolsStackParamList = {
@@ -17,6 +18,7 @@ export type PoolsStackParamList = {
   Draw: { groupId: string };
   PickHistory: { groupId: string };
   Join: { code: string };
+  Terms: undefined;
 };
 
 const Stack = createNativeStackNavigator<PoolsStackParamList>();
@@ -67,6 +69,11 @@ export function PoolsStack() {
         name="Join"
         component={JoinScreen}
         options={{ title: 'Join Pool' }}
+      />
+      <Stack.Screen
+        name="Terms"
+        component={TermsScreen}
+        options={{ title: 'Terms & Conditions' }}
       />
     </Stack.Navigator>
   );

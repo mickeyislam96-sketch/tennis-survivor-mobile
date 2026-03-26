@@ -1,7 +1,7 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   SafeAreaView,
-  FlatList,
+  SectionList,
   StyleSheet,
   RefreshControl,
   View,
@@ -15,10 +15,11 @@ import PoolCard from '../components/PoolCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 import EmptyState from '../components/EmptyState';
-import { colours, spacing, borderRadius, typography } from '../theme';
+import { colours, spacing, borderRadius } from '../theme';
 
 type RootStackParamList = {
   Group: { groupId: string };
+  Terms: undefined;
 };
 
 type PoolsScreenNavigationProp = NativeStackNavigationProp<
@@ -45,6 +46,35 @@ export function PoolsScreen({ navigation }: Props) {
     [navigation],
   );
 
+  // Group pools by status
+  const sections = useMemo(() => {
+    if (!pools) return [];
+
+    const active: Pool[] = [];
+    const upcoming: Pool[] = [];
+    const completed: Pool[] = [];
+
+    for (const pool of pools) {
+      const status = pool.tournament?.status || 'active';
+      const allEliminated = status === 'active' && pool.aliveCount === 0 && pool.memberCount > 0;
+
+      if (status === 'completed' || allEliminated) {
+        completed.push(pool);
+      } else if (status === 'upcoming') {
+        upcoming.push(pool);
+      } else {
+        active.push(pool);
+      }
+    }
+
+    const result: { title: string; data: Pool[] }[] = [];
+    if (active.length > 0) result.push({ title: 'Active Pools', data: active });
+    if (upcoming.length > 0) result.push({ title: 'Upcoming', data: upcoming });
+    if (completed.length > 0) result.push({ title: 'Past Pools', data: completed });
+
+    return result;
+  }, [pools]);
+
   if (loading && !pools) {
     return <LoadingSpinner message="Loading pools..." />;
   }
@@ -59,49 +89,60 @@ export function PoolsScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Green gradient hero banner */}
-      <View style={styles.heroBanner}>
-        {/* Overlay texture effect */}
-        <View style={styles.heroOverlay} />
-
-        <Text style={styles.eyebrow}>TENNIS SURVIVOR</Text>
-        <Text style={styles.heroTitle}>Final Serve-ivor</Text>
-        <Text style={styles.heroSubtitle}>
-          Pick one player per round. If they lose, you're out. Last one standing wins.
-        </Text>
-      </View>
-
-      {/* Section header */}
-      <Text style={styles.sectionHeader}>Your Pools</Text>
-
-      {/* Pools list */}
-      {pools && pools.length === 0 ? (
-        <EmptyState
-          icon="🎾"
-          title="No Pools Available"
-          message="Check back soon for new tournaments."
-        />
-      ) : (
-        <FlatList
-          data={pools}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <PoolCard
-              pool={item}
-              onPress={() => handlePoolPress(item)}
-            />
-          )}
-          refreshControl={
-            <RefreshControl
-              refreshing={loading}
-              onRefresh={refresh}
-              tintColor={colours.primary}
-            />
-          }
-          contentContainerStyle={styles.listContent}
-          scrollEnabled={true}
-        />
-      )}
+      <SectionList
+        sections={sections}
+        keyExtractor={(item) => item.id}
+        ListHeaderComponent={
+          <>
+            {/* Green hero banner */}
+            <View style={styles.heroBanner}>
+              <View style={styles.heroOverlay} />
+              <Text style={styles.eyebrow}>TENNIS SURVIVOR</Text>
+              <Text style={styles.heroTitle}>Final Serve-ivor</Text>
+              <Text style={styles.heroSubtitle}>
+                Pick one player per round. If they lose, you{'\u2019'}re out. Last one standing wins.
+              </Text>
+            </View>
+          </>
+        }
+        renderSectionHeader={({ section }) => (
+          <Text style={styles.sectionHeader}>{section.title}</Text>
+        )}
+        renderItem={({ item }) => (
+          <View style={styles.cardContainer}>
+            <PoolCard pool={item} onPress={() => handlePoolPress(item)} />
+          </View>
+        )}
+        ListEmptyComponent={
+          <EmptyState
+            icon={'\uD83C\uDFBE'}
+            title="No Pools Available"
+            message="Check back soon for new tournaments."
+          />
+        }
+        ListFooterComponent={
+          <View style={styles.footer}>
+            <Text
+              style={styles.footerLink}
+              onPress={() => navigation.navigate('Terms' as any)}
+            >
+              Terms & Conditions
+            </Text>
+            <Text style={styles.footerCopy}>
+              {'\u00A9'} 2026 Final Serve-ivor {'\u00B7'} A game of skill
+            </Text>
+          </View>
+        }
+        refreshControl={
+          <RefreshControl
+            refreshing={loading}
+            onRefresh={refresh}
+            tintColor={colours.primary}
+          />
+        }
+        contentContainerStyle={styles.listContent}
+        stickySectionHeadersEnabled={false}
+      />
     </SafeAreaView>
   );
 }
@@ -113,8 +154,8 @@ const styles = StyleSheet.create({
   },
   heroBanner: {
     backgroundColor: colours.primary,
-    paddingTop: spacing.lg,
-    paddingHorizontal: spacing.md,
+    paddingTop: spacing.xl,
+    paddingHorizontal: spacing.lg,
     paddingBottom: spacing.lg,
     position: 'relative',
     overflow: 'hidden',
@@ -155,16 +196,34 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   sectionHeader: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
     color: colours.text,
-    marginBottom: spacing.md,
     marginTop: spacing.lg,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.md,
+  },
+  cardContainer: {
     paddingHorizontal: spacing.md,
   },
   listContent: {
+    paddingBottom: spacing.xl,
+  },
+  footer: {
+    alignItems: 'center',
+    paddingVertical: spacing.xl,
     paddingHorizontal: spacing.md,
-    paddingBottom: spacing.lg,
+    gap: spacing.xs,
+  },
+  footerLink: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colours.primary,
+    marginBottom: spacing.xs,
+  },
+  footerCopy: {
+    fontSize: 12,
+    color: colours.textMuted,
   },
 });
 
