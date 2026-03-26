@@ -47,18 +47,25 @@ export function truncateName(name: string, maxLen: number = 18): string {
 }
 
 /**
- * Format a countdown from milliseconds to "Xh Ym" or "Xm Ys".
+ * Format a countdown from milliseconds to a human-readable string.
+ * - 24h+  → "Xd Yh Zm"
+ * - 1-24h → "Xh Ym"
+ * - <1h   → "Xm Ys"
+ * - <1m   → "Xs"
  */
 export function formatCountdown(ms: number): { hours: number; minutes: number; seconds: number; display: string } {
   if (ms <= 0) return { hours: 0, minutes: 0, seconds: 0, display: 'Locked' };
 
   const totalSeconds = Math.floor(ms / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
 
   let display: string;
-  if (hours > 0) {
+  if (days > 0) {
+    display = `${days}d ${hours}h ${minutes}m`;
+  } else if (hours > 0) {
     display = `${hours}h ${minutes}m`;
   } else if (minutes > 0) {
     display = `${minutes}m ${seconds}s`;
