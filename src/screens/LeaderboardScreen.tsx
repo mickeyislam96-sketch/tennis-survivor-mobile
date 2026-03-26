@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useCallback } from 'react';
 import {
   SafeAreaView,
   View,
@@ -11,11 +11,10 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
 import { usePollData } from '../hooks/usePollData';
 import { getLeaderboard, LeaderboardData, LeaderboardMember } from '../api/leaderboard';
-import { StatCard } from '../components/StatCard';
-import { Badge } from '../components/Badge';
-import { LoadingSpinner } from '../components/LoadingSpinner';
-import { ErrorMessage } from '../components/ErrorMessage';
-import { colours, spacing, typography, borderRadius } from '../theme';
+import LoadingSpinner from '../components/LoadingSpinner';
+import ErrorMessage from '../components/ErrorMessage';
+import EmptyState from '../components/EmptyState';
+import { colours, spacing, borderRadius, shadows, AVATAR_COLOURS } from '../theme';
 import { ROUND_LABELS } from '../utils/constants';
 
 type RootStackParamList = {
@@ -29,53 +28,6 @@ interface Props {
   route: { params: { groupId: string } };
 }
 
-function LeaderboardRow({
-  member,
-  rank,
-  roundIsLocked,
-}: {
-  member: LeaderboardMember;
-  rank: number;
-  roundIsLocked: boolean;
-}) {
-  const statusBg = member.isAlive ? colours.successBg : colours.dangerBg;
-  const statusText = member.isAlive ? colours.success : colours.danger;
-  const statusLabel = member.isAlive ? 'Alive' : `Eliminated at ${member.eliminatedRound || '?'}`;
-
-  const pickDisplay = !roundIsLocked
-    ? '🔒 Hidden'
-    : member.currentRoundPick || '—';
-
-  const pickColor = member.isAlive ? colours.text : colours.textMuted;
-
-  return (
-    <View style={styles.row}>
-      <Text style={styles.rank}>{rank}</Text>
-      <View style={styles.playerInfo}>
-        <Text style={styles.playerName}>{member.displayName}</Text>
-        <View style={styles.badges}>
-          <Badge
-            label={statusLabel}
-            variant={member.isAlive ? 'success' : 'danger'}
-          />
-        </View>
-      </View>
-      <View style={styles.statsCol}>
-        <Text style={styles.statValue}>{member.survivedRounds}</Text>
-        <Text style={styles.statLabel}>Rounds</Text>
-      </View>
-      <View style={styles.pickCol}>
-        <Text
-          style={[styles.pickText, { color: pickColor }]}
-          numberOfLines={1}
-        >
-          {pickDisplay}
-        </Text>
-      </View>
-    </View>
-  );
-}
-
 export function LeaderboardScreen({ route }: Props) {
   const { user } = useAuth();
   const { groupId } = route.params;
@@ -87,27 +39,13 @@ export function LeaderboardScreen({ route }: Props) {
     refresh,
   } = usePollData(
     () => getLeaderboard(groupId),
-    30000,
-    [groupId, user?.id],
+    5000,
+    [groupId],
   );
 
-  const sortedMembers = useMemo(() => {
-    if (!leaderboardData) return [];
-    return [...leaderboardData.leaderboard].sort((a, b) => {
-      if (a.isAlive !== b.isAlive) return a.isAlive ? -1 : 1;
-      return (b.survivedRounds || 0) - (a.survivedRounds || 0);
-    });
-  }, [leaderboardData]);
-
-  const eliminatedCount = useMemo(() => {
-    if (!leaderboardData) return 0;
-    return leaderboardData.leaderboard.filter((m) => !m.isAlive).length;
-  }, [leaderboardData]);
-
-  const totalPlayers = useMemo(() => {
-    if (!leaderboardData) return 0;
-    return leaderboardData.leaderboard.length;
-  }, [leaderboardData]);
+  const handleRefresh = useCallback(() => {
+    refresh();
+  }, [refresh]);
 
   if (loading && !leaderboardData) {
     return <LoadingSpinner message="Loading leaderboard..." />;
@@ -116,73 +54,184 @@ export function LeaderboardScreen({ route }: Props) {
   if (error && !leaderboardData) {
     return (
       <SafeAreaView style={styles.container}>
-        <ErrorMessage message={error} onRetry={refresh} />
+        <ErrorMessage message={error} onRetry={handleRefresh} />
       </SafeAreaView>
     );
   }
 
-  if (!leaderboardData || leaderboardData.leaderboard.length === 0) {
+  if (!leaderboardData || !leaderboardData.leaderboard || leaderboardData.leaderboard.length === 0) {
     return (
       <SafeAreaView style={styles.container}>
-        <ErrorMessage message="No leaderboard data available" onRetry={refresh} />
+        <EmptyState title="No members yet" message="Invite friends to join the group." />
       </SafeAreaView>
     );
   }
+
+  // Sort: alive first, then by survived rounds descending
+  const sortedMembers = [...leaderboardData.leaderboard].sort((a, b) => {
+    if (a.isAlive !== b.isAlive) {
+      return a.isAlive ? -1 : 1;
+    }
+    return b.survivedRounds - a.survivedRounds;
+  });
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>{leaderboardData.group.name}</Text>
-        <Text style={styles.subtitle}>
-          {ROUND_LABELS[leaderboardData.currentRound] || leaderboardData.currentRound}
-        </Text>
-      </View>
-
-      {/* Stats Bar */}
-      <View style={styles.statsGrid}>
-        <StatCard
-          label="Total"
-          value={totalPlayers}
-        />
-        <StatCard
-          label="Alive"
-          value={leaderboardData.aliveCount}
-          colour={colours.success}
-        />
-        <StatCard
-          label="Eliminated"
-          value={eliminatedCount}
-          colour={colours.danger}
-        />
-        <StatCard
-          label="Current"
-          value={leaderboardData.currentRound}
-        />
-      </View>
-
-      {/* Leaderboard Table */}
       <FlatList
+        ListHeaderComponent={
+          <>
+            {/* Stats Bar */}
+            <View style={[styles.statsCard, shadows.sm]}>
+              <View style={styles.statsGrid}>
+                {/* Top Row */}
+                <View style={[styles.statCell, styles.statCellTopLeft]}>
+                  <Text style={styles.statValue}>{leaderboardData.leaderboard.length}</Text>
+                  <Text style={styles.statLabel}>Total Members</Text>
+                </View>
+                <View style={[styles.statCell, styles.statCellTopRight]}>
+                  <Text style={[styles.statValue, { color: colours.success }]}>
+                    {leaderboardData.aliveCount}
+                  </Text>
+                  <Text style={styles.statLabel}>Alive</Text>
+                </View>
+
+                {/* Bottom Row */}
+                <View style={[styles.statCell, styles.statCellBottomLeft]}>
+                  <Text style={[styles.statValue, { color: colours.danger }]}>
+                    {leaderboardData.leaderboard.length - leaderboardData.aliveCount}
+                  </Text>
+                  <Text style={styles.statLabel}>Eliminated</Text>
+                </View>
+                <View style={[styles.statCell, styles.statCellBottomRight]}>
+                  <Text style={styles.statValue}>
+                    {ROUND_LABELS[leaderboardData.currentRound] || leaderboardData.currentRound}
+                  </Text>
+                  <Text style={styles.statLabel}>Current Round</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Table Header */}
+            <View style={styles.tableHeader}>
+              <Text style={[styles.headerCell, { width: 32 }]}>#</Text>
+              <Text style={[styles.headerCell, { flex: 1 }]}>Player</Text>
+              <Text style={[styles.headerCell, { width: 70 }]}>Status</Text>
+              <Text style={[styles.headerCell, { width: 60 }]}>Survived</Text>
+              <Text style={[styles.headerCell, { width: 80 }]}>Pick</Text>
+            </View>
+          </>
+        }
         data={sortedMembers}
         keyExtractor={(item) => item.id}
         renderItem={({ item, index }) => (
           <LeaderboardRow
             member={item}
             rank={index + 1}
+            isCurrentUser={user?.id === item.userId}
             roundIsLocked={leaderboardData.roundIsLocked}
+            currentRound={leaderboardData.currentRound}
           />
         )}
+        scrollEnabled={true}
         refreshControl={
           <RefreshControl
             refreshing={loading}
-            onRefresh={refresh}
+            onRefresh={handleRefresh}
             tintColor={colours.primary}
           />
         }
-        contentContainerStyle={styles.tableContent}
-        scrollEnabled={true}
+        contentContainerStyle={styles.listContent}
       />
     </SafeAreaView>
+  );
+}
+
+interface LeaderboardRowProps {
+  member: LeaderboardMember;
+  rank: number;
+  isCurrentUser: boolean;
+  roundIsLocked: boolean;
+  currentRound: string;
+}
+
+function LeaderboardRow({
+  member,
+  rank,
+  isCurrentUser,
+  roundIsLocked,
+  currentRound,
+}: LeaderboardRowProps) {
+  const avatarColour = AVATAR_COLOURS[rank % AVATAR_COLOURS.length];
+  const initials = member.displayName
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+
+  const rowBg = isCurrentUser ? colours.green50 : colours.white;
+
+  return (
+    <View style={[styles.tableRow, { backgroundColor: rowBg }]}>
+      {/* Rank */}
+      <Text style={[styles.rankCell]}>
+        {rank}
+      </Text>
+
+      {/* Player Cell */}
+      <View style={styles.playerCell}>
+        <View style={[styles.avatar, { backgroundColor: avatarColour }]}>
+          <Text style={styles.avatarText}>{initials}</Text>
+        </View>
+        <View style={styles.playerInfo}>
+          <Text style={styles.playerName} numberOfLines={1}>
+            {member.displayName}
+          </Text>
+          {isCurrentUser && <Text style={styles.youBadge}>You</Text>}
+        </View>
+      </View>
+
+      {/* Status Cell */}
+      <View style={styles.statusCell}>
+        {member.isAlive ? (
+          <View style={styles.statusAlive}>
+            <View style={styles.statusDot} />
+            <Text style={styles.statusText}>Alive</Text>
+          </View>
+        ) : (
+          <Text style={styles.statusEliminated}>
+            Out {member.eliminatedRound || 'R1'}
+          </Text>
+        )}
+      </View>
+
+      {/* Survived Cell */}
+      <View style={styles.survivedCell}>
+        <Text style={[
+          styles.survivedValue,
+          { color: member.isAlive ? colours.primaryDark : colours.text }
+        ]}>
+          {member.survivedRounds}/{member.picksCount}
+        </Text>
+        <Text style={styles.survivedLabel}>rounds</Text>
+      </View>
+
+      {/* Pick Cell */}
+      <View style={styles.pickCell}>
+        {!roundIsLocked ? (
+          <Text style={styles.hiddenPickText}>🔒 Hidden</Text>
+        ) : member.currentRoundPick ? (
+          <Text style={[
+            styles.pickText,
+            { color: member.isAlive ? colours.success : colours.danger }
+          ]}>
+            {member.currentRoundPick}
+          </Text>
+        ) : (
+          <Text style={styles.noPickText}>—</Text>
+        )}
+      </View>
+    </View>
   );
 }
 
@@ -191,78 +240,201 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colours.background,
   },
-  header: {
+  listContent: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colours.border,
   },
-  title: {
-    ...typography.h2,
-  },
-  subtitle: {
-    ...typography.bodySmall,
-    marginTop: spacing.xs,
+
+  // STATS CARD
+  statsCard: {
+    backgroundColor: colours.surface,
+    borderWidth: 1.5,
+    borderColor: colours.border,
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+    marginBottom: spacing.lg,
   },
   statsGrid: {
     flexDirection: 'row',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.md,
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
   },
-  tableContent: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colours.surface,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-    gap: spacing.sm,
-  },
-  rank: {
-    ...typography.h3,
-    color: colours.textMuted,
-    minWidth: 28,
-    textAlign: 'center',
-  },
-  playerInfo: {
+  statCell: {
     flex: 1,
-    marginRight: spacing.sm,
-  },
-  playerName: {
-    ...typography.body,
-    fontWeight: '600',
-    marginBottom: spacing.xs,
-  },
-  badges: {
-    flexDirection: 'row',
-    gap: spacing.xs,
-  },
-  statsCol: {
+    justifyContent: 'center',
     alignItems: 'center',
-    minWidth: 50,
+    paddingVertical: 14,
+    paddingHorizontal: 10,
+  },
+  statCellTopLeft: {
+    borderRightWidth: 1,
+    borderRightColor: colours.border,
+    borderBottomWidth: 1,
+    borderBottomColor: colours.border,
+  },
+  statCellTopRight: {
+    borderBottomWidth: 1,
+    borderBottomColor: colours.border,
+  },
+  statCellBottomLeft: {
+    borderRightWidth: 1,
+    borderRightColor: colours.border,
+  },
+  statCellBottomRight: {
+    // No borders
   },
   statValue: {
-    ...typography.h3,
+    fontSize: 22,
+    fontWeight: '800',
+    letterSpacing: -0.3,
+    lineHeight: 22,
     color: colours.text,
   },
   statLabel: {
-    ...typography.caption,
+    fontSize: 11,
+    fontWeight: '600',
     color: colours.textMuted,
-    marginTop: 2,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginTop: spacing.xs,
   },
-  pickCol: {
-    minWidth: 70,
-    alignItems: 'flex-end',
+
+  // TABLE HEADER
+  tableHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colours.surfaceAlt,
+    borderBottomWidth: 1,
+    borderBottomColor: colours.border,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginHorizontal: -spacing.md,
+    marginBottom: spacing.sm,
   },
-  pickText: {
-    ...typography.bodySmall,
+  headerCell: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colours.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+
+  // TABLE ROW
+  tableRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colours.border,
+    marginHorizontal: -spacing.md,
+  },
+
+  // Rank Column
+  rankCell: {
+    width: 32,
+    fontSize: 13,
+    fontWeight: '600',
+    color: colours.textMuted,
+  },
+
+  // Player Column
+  playerCell: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  avatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colours.white,
+  },
+  playerInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  playerName: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: colours.text,
+    maxWidth: '100%',
+  },
+  youBadge: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: colours.success,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+
+  // Status Column
+  statusCell: {
+    width: 70,
+  },
+  statusAlive: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  statusDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: colours.success,
+  },
+  statusText: {
+    fontSize: 13.5,
+    fontWeight: '600',
+    color: colours.success,
+  },
+  statusEliminated: {
+    fontSize: 13.5,
+    fontWeight: '600',
+    color: colours.textMuted,
+  },
+
+  // Survived Column
+  survivedCell: {
+    width: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  survivedValue: {
+    fontSize: 13,
     fontWeight: '600',
   },
+  survivedLabel: {
+    fontSize: 13,
+    fontWeight: '400',
+    color: colours.textMuted,
+  },
+
+  // Pick Column
+  pickCell: {
+    width: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  hiddenPickText: {
+    fontSize: 11,
+    color: colours.textMuted,
+  },
+  pickText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  noPickText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: colours.textMuted,
+  },
 });
+
+export default LeaderboardScreen;

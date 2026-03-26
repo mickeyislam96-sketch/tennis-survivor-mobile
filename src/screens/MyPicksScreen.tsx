@@ -1,17 +1,28 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  View, Text, FlatList, TouchableOpacity, RefreshControl,
-  SafeAreaView, StyleSheet,
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  RefreshControl,
+  SafeAreaView,
+  StyleSheet,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
 import { getMyPools } from '../api/auth';
-import { getPickHistory, Pick } from '../api/picks';
-import { LoadingSpinner } from '../components/LoadingSpinner';
-import { EmptyState } from '../components/EmptyState';
-import { Badge } from '../components/Badge';
-import { colours, spacing, borderRadius, shadows } from '../theme';
+import { getPickHistory } from '../api/picks';
+import { colours, spacing, borderRadius } from '../theme';
 import { ROUND_LABELS, ROUND_ORDER } from '../utils/constants';
+import LoadingSpinner from '../components/LoadingSpinner';
+import EmptyState from '../components/EmptyState';
+
+interface Pick {
+  id: string;
+  round: string;
+  playerName: string;
+  survived: boolean | null;
+}
 
 interface PoolPicks {
   groupId: string;
@@ -19,7 +30,7 @@ interface PoolPicks {
   picks: Pick[];
 }
 
-export function MyPicksScreen() {
+export default function MyPicksScreen() {
   const { user } = useAuth();
   const navigation = useNavigation<any>();
   const [poolPicks, setPoolPicks] = useState<PoolPicks[]>([]);
@@ -35,7 +46,7 @@ export function MyPicksScreen() {
       for (const pool of pools) {
         try {
           const picks = await getPickHistory(pool.id);
-          const sorted = [...picks].sort((a, b) =>
+          const sorted = [...picks].sort((a: any, b: any) =>
             ROUND_ORDER.indexOf(a.round as any) - ROUND_ORDER.indexOf(b.round as any)
           );
           results.push({ groupId: pool.id, groupName: pool.name, picks: sorted });
@@ -51,7 +62,9 @@ export function MyPicksScreen() {
     }
   }, [user]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -59,19 +72,9 @@ export function MyPicksScreen() {
     setRefreshing(false);
   };
 
-  if (loading) return <LoadingSpinner message="Loading your picks..." />;
-
-  const getResultVariant = (survived: boolean | null) => {
-    if (survived === true) return 'success' as const;
-    if (survived === false) return 'danger' as const;
-    return 'muted' as const;
-  };
-
-  const getResultLabel = (survived: boolean | null) => {
-    if (survived === true) return 'Survived';
-    if (survived === false) return 'Eliminated';
-    return 'Pending';
-  };
+  if (loading) {
+    return <LoadingSpinner />;
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -84,41 +87,65 @@ export function MyPicksScreen() {
         }
         ListEmptyComponent={
           <EmptyState
+            icon="🎾"
             title="No picks yet"
-            message="Join a pool and make your first pick to see your history here."
+            message="Join a pool and make your first pick"
           />
         }
-        contentContainerStyle={poolPicks.length === 0 ? { flex: 1 } : { padding: spacing.md, paddingBottom: spacing.xxl }}
+        contentContainerStyle={poolPicks.length === 0 ? { flex: 1 } : { padding: spacing.md, paddingBottom: spacing.xl }}
         renderItem={({ item }) => (
           <View style={styles.poolSection}>
             <TouchableOpacity
-              onPress={() => navigation.navigate('Pools', { screen: 'Group', params: { groupId: item.groupId } })}
+              onPress={() =>
+                navigation.navigate('Pools', {
+                  screen: 'Group',
+                  params: { groupId: item.groupId },
+                })
+              }
             >
               <Text style={styles.poolName}>{item.groupName}</Text>
             </TouchableOpacity>
             {item.picks.length === 0 ? (
               <Text style={styles.noPicks}>No picks made yet</Text>
             ) : (
-              item.picks.map((pick) => (
-                <View key={pick.id} style={[styles.pickCard, shadows.card]}>
-                  <View style={styles.pickRow}>
-                    <View>
-                      <Text style={styles.pickRound}>{ROUND_LABELS[pick.round] || pick.round}</Text>
-                      <Text style={[
-                        styles.pickPlayer,
-                        pick.survived === true && { color: colours.success },
-                        pick.survived === false && { color: colours.danger },
-                      ]}>
-                        {pick.playerName}
-                      </Text>
+              item.picks.map((pick) => {
+                const statusLabel =
+                  pick.survived === true
+                    ? 'Survived'
+                    : pick.survived === false
+                    ? 'Eliminated'
+                    : 'Pending';
+
+                const statusBg =
+                  pick.survived === true
+                    ? colours.successBg
+                    : pick.survived === false
+                    ? colours.dangerBg
+                    : colours.gray100;
+
+                const statusText =
+                  pick.survived === true
+                    ? colours.successDark
+                    : pick.survived === false
+                    ? colours.dangerDark
+                    : colours.gray500;
+
+                return (
+                  <View key={pick.id} style={styles.pickCard}>
+                    <View style={styles.pickRow}>
+                      <View style={styles.pickInfo}>
+                        <Text style={styles.pickRound}>{ROUND_LABELS[pick.round]}</Text>
+                        <Text style={styles.pickPlayer}>{pick.playerName}</Text>
+                      </View>
+                      <View style={[styles.statusPill, { backgroundColor: statusBg }]}>
+                        <Text style={[styles.statusLabel, { color: statusText }]}>
+                          {statusLabel}
+                        </Text>
+                      </View>
                     </View>
-                    <Badge
-                      label={getResultLabel(pick.survived)}
-                      variant={getResultVariant(pick.survived)}
-                    />
                   </View>
-                </View>
-              ))
+                );
+              })
             )}
           </View>
         )}
@@ -128,13 +155,15 @@ export function MyPicksScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colours.background },
+  container: {
+    flex: 1,
+    backgroundColor: colours.background,
+  },
   header: {
-    fontSize: 28,
+    fontSize: 22,
     fontWeight: '700',
     color: colours.text,
     padding: spacing.md,
-    paddingTop: spacing.lg,
   },
   poolSection: {
     marginBottom: spacing.lg,
@@ -142,8 +171,12 @@ const styles = StyleSheet.create({
   poolName: {
     fontSize: 16,
     fontWeight: '700',
-    color: colours.primary,
+    color: colours.text,
+    borderBottomWidth: 1,
+    borderBottomColor: colours.border,
+    paddingBottom: spacing.sm,
     marginBottom: spacing.sm,
+    marginTop: spacing.lg,
   },
   noPicks: {
     color: colours.textMuted,
@@ -152,6 +185,8 @@ const styles = StyleSheet.create({
   },
   pickCard: {
     backgroundColor: colours.surface,
+    borderWidth: 1.5,
+    borderColor: colours.border,
     borderRadius: borderRadius.md,
     padding: spacing.md,
     marginBottom: spacing.xs,
@@ -161,17 +196,29 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  pickInfo: {
+    flex: 1,
+  },
   pickRound: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colours.textMuted,
+    fontSize: 11,
+    fontWeight: '700',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
+    color: colours.textMuted,
+    marginBottom: spacing.xs,
   },
   pickPlayer: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     color: colours.text,
-    marginTop: 2,
+  },
+  statusPill: {
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: borderRadius.full,
+  },
+  statusLabel: {
+    fontSize: 12,
+    fontWeight: '600',
   },
 });

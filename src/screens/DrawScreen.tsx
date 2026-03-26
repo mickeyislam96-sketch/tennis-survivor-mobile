@@ -1,15 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, RefreshControl,
-  SafeAreaView, SectionList, StyleSheet,
+  SafeAreaView, SectionList, StyleSheet, ScrollView,
 } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import { getRounds, getBracket, DrawMatch } from '../api/draw';
-import { LoadingSpinner } from '../components/LoadingSpinner';
-import { ErrorMessage } from '../components/ErrorMessage';
-import { EmptyState } from '../components/EmptyState';
-import { Badge } from '../components/Badge';
-import { colours, spacing, borderRadius, shadows } from '../theme';
+import LoadingSpinner from '../components/LoadingSpinner';
+import ErrorMessage from '../components/ErrorMessage';
+import EmptyState from '../components/EmptyState';
+import { colours, spacing, borderRadius } from '../theme';
 import { ROUND_LABELS } from '../utils/constants';
 
 interface Section {
@@ -22,6 +21,7 @@ export function DrawScreen() {
   const { groupId } = route.params;
 
   const [rounds, setRounds] = useState<string[]>([]);
+  const [currentRound, setCurrentRound] = useState<string | null>(null);
   const [sections, setSections] = useState<Section[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -34,6 +34,11 @@ export function DrawScreen() {
         getBracket(),
       ]);
       setRounds(roundsList);
+
+      // Set initial round to first round if not set
+      if (currentRound === null && roundsList.length > 0) {
+        setCurrentRound(roundsList[0]);
+      }
 
       // Group matches by round
       const matchesByRound: Record<string, DrawMatch[]> = {};
@@ -59,7 +64,7 @@ export function DrawScreen() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentRound]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -72,139 +77,257 @@ export function DrawScreen() {
   if (loading) return <LoadingSpinner message="Loading draw..." />;
   if (error) return <ErrorMessage message={error} onRetry={loadData} />;
 
+  // Filter sections based on current round
+  const filteredSections = currentRound
+    ? sections.filter((s) => ROUND_LABELS[currentRound] === s.title)
+    : sections;
+
   const renderMatch = ({ item }: { item: DrawMatch }) => {
     const isCompleted = item.status === 'completed';
     const isLive = item.status === 'live' || item.status === 'in_progress';
     const p1Won = item.winnerId === item.player1Id;
     const p2Won = item.winnerId === item.player2Id;
 
+    let statusBg = colours.gray50;
+    let statusText = colours.gray500;
+    let statusLabel = 'Upcoming';
+
+    if (isCompleted) {
+      statusBg = '#dcfce7';
+      statusText = '#15803d';
+      statusLabel = 'Done';
+    } else if (isLive) {
+      statusBg = '#fee2e2';
+      statusText = '#ef4444';
+      statusLabel = 'Live';
+    }
+
     return (
-      <View style={[styles.matchCard, shadows.card]}>
+      <View style={styles.matchCard}>
         {isLive && (
-          <View style={styles.liveDot}>
-            <View style={styles.liveDotInner} />
-            <Text style={styles.liveText}>LIVE</Text>
+          <View style={styles.liveIndicator}>
+            <Text style={styles.liveIndicatorText}>LIVE</Text>
           </View>
         )}
-        <View style={styles.matchRow}>
+
+        {/* Player 1 */}
+        <View style={styles.playerRow}>
           <Text style={[
             styles.playerName,
-            p1Won && styles.winnerName,
-            (isCompleted && !p1Won) && styles.loserName,
+            p1Won && styles.playerWinner,
+            isCompleted && !p1Won && styles.playerLoser,
           ]}>
             {item.player1Name || 'TBD'}
           </Text>
-          {isCompleted && p1Won && <Text style={styles.checkmark}>✓</Text>}
+          {item.score && (
+            <Text style={styles.score}>{item.score.split(' ')[0]}</Text>
+          )}
         </View>
-        <View style={styles.matchDivider} />
-        <View style={styles.matchRow}>
+
+        {/* Divider */}
+        <View style={styles.divider} />
+
+        {/* Player 2 */}
+        <View style={styles.playerRow}>
           <Text style={[
             styles.playerName,
-            p2Won && styles.winnerName,
-            (isCompleted && !p2Won) && styles.loserName,
+            p2Won && styles.playerWinner,
+            isCompleted && !p2Won && styles.playerLoser,
           ]}>
             {item.player2Name || 'TBD'}
           </Text>
-          {isCompleted && p2Won && <Text style={styles.checkmark}>✓</Text>}
+          {item.score && (
+            <Text style={styles.score}>{item.score.split(' ')[item.score.split(' ').length - 1]}</Text>
+          )}
         </View>
-        {item.score && (
-          <Text style={styles.score}>{item.score}</Text>
-        )}
+
+        {/* Meta Footer */}
+        <View style={styles.metaSection}>
+          <Text style={styles.dateText}>{item.startTime ? new Date(item.startTime).toLocaleDateString() : '–'}</Text>
+          <View style={[styles.statusBadge, { backgroundColor: statusBg }]}>
+            <Text style={[styles.statusBadgeText, { color: statusText }]}>
+              {statusLabel}
+            </Text>
+          </View>
+        </View>
       </View>
     );
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <SectionList
-        sections={sections}
+      {/* Round Tabs */}
+      <View style={styles.tabsContainer}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} scrollEnabled>
+          {rounds.map((round) => (
+            <TouchableOpacity
+              key={round}
+              onPress={() => setCurrentRound(round)}
+              style={[
+                styles.tab,
+                currentRound === round && styles.tabActive,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.tabText,
+                  currentRound === round && styles.tabTextActive,
+                ]}
+              >
+                {ROUND_LABELS[round] || round}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* Draw List */}
+      <FlatList
+        data={filteredSections.length > 0 ? filteredSections[0].data : []}
         keyExtractor={(item) => item.id}
         renderItem={renderMatch}
-        renderSectionHeader={({ section }) => (
-          <Text style={styles.sectionHeader}>{section.title}</Text>
-        )}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colours.primary} />
         }
-        ListEmptyComponent={<EmptyState title="No draw data" message="The draw hasn't been published yet." />}
-        contentContainerStyle={sections.length === 0 ? { flex: 1 } : { paddingBottom: spacing.xxl }}
-        stickySectionHeadersEnabled
+        ListEmptyComponent={
+          <EmptyState
+            title="Draw not published"
+            message="The draw hasn't been published yet."
+          />
+        }
+        contentContainerStyle={[
+          styles.listContent,
+          filteredSections.length === 0 && { flex: 1 }
+        ]}
+        scrollEnabled={true}
       />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colours.background },
-  sectionHeader: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colours.text,
+  container: {
+    flex: 1,
     backgroundColor: colours.background,
+  },
+
+  // TABS
+  tabsContainer: {
+    backgroundColor: colours.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colours.border,
+  },
+  tab: {
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    paddingTop: spacing.md,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+    marginRight: spacing.sm,
+  },
+  tabActive: {
+    borderBottomColor: colours.primary,
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: colours.textMuted,
+  },
+  tabTextActive: {
+    color: colours.primary,
+    fontWeight: '700',
+  },
+
+  // MATCH CARD
+  listContent: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    paddingBottom: spacing.xl,
   },
   matchCard: {
-    backgroundColor: colours.surface,
-    marginHorizontal: spacing.md,
-    marginBottom: spacing.xs,
+    backgroundColor: colours.white,
+    borderWidth: 1,
+    borderColor: colours.border,
     borderRadius: borderRadius.md,
-    padding: spacing.md,
+    overflow: 'hidden',
+    marginBottom: spacing.md,
   },
-  matchRow: {
+
+  // Live indicator
+  liveIndicator: {
+    backgroundColor: colours.red50,
+    borderBottomWidth: 1,
+    borderBottomColor: colours.red100,
+    paddingVertical: 3,
+    paddingHorizontal: spacing.md,
+  },
+  liveIndicatorText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: colours.red500,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+
+  // Player rows
+  playerRow: {
+    flexDirection: 'row',
+    paddingVertical: 7,
+    paddingHorizontal: spacing.md,
+    color: colours.gray700,
+    alignItems: 'center',
+  },
+  playerName: {
+    flex: 1,
+    fontSize: 14,
+    color: colours.gray700,
+    maxWidth: '85%',
+  },
+  playerWinner: {
+    fontWeight: '700',
+    color: colours.green700,
+  },
+  playerLoser: {
+    color: colours.gray400,
+  },
+  score: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colours.gray500,
+    marginLeft: spacing.sm,
+  },
+
+  // Divider
+  divider: {
+    height: 1,
+    backgroundColor: colours.gray100,
+  },
+
+  // Meta section
+  metaSection: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 4,
+    backgroundColor: colours.gray50,
+    borderTopWidth: 1,
+    borderTopColor: colours.gray100,
+    paddingVertical: 5,
+    paddingHorizontal: spacing.md,
   },
-  matchDivider: {
-    height: 1,
-    backgroundColor: colours.border,
-    marginVertical: 4,
+  dateText: {
+    fontSize: 11.5,
+    color: colours.gray400,
   },
-  playerName: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: colours.textSecondary,
-    flex: 1,
+  statusBadge: {
+    paddingVertical: 2,
+    paddingHorizontal: 8,
+    borderRadius: borderRadius.full,
   },
-  winnerName: {
-    color: colours.success,
-    fontWeight: '700',
-  },
-  loserName: {
-    color: colours.textMuted,
-    fontWeight: '400',
-  },
-  checkmark: {
-    color: colours.success,
-    fontSize: 16,
-    fontWeight: '700',
-    marginLeft: spacing.sm,
-  },
-  score: {
-    fontSize: 12,
-    color: colours.textMuted,
-    textAlign: 'right',
-    marginTop: 4,
-  },
-  liveDot: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-    gap: 6,
-  },
-  liveDotInner: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colours.danger,
-  },
-  liveText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colours.danger,
-    letterSpacing: 1,
+  statusBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
 });
+
+export default DrawScreen;

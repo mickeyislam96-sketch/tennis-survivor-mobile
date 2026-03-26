@@ -12,8 +12,8 @@ import {
   Alert,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import * as authApi from '../api/auth';
-import { colours, spacing, borderRadius, typography } from '../theme';
+import { forgotPassword } from '../api/auth';
+import { colours, spacing, borderRadius } from '../theme';
 
 type RootStackParamList = {
   Login: undefined;
@@ -24,7 +24,7 @@ type RootStackParamList = {
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ForgotPassword'>;
 
-export function ForgotPasswordScreen({ navigation }: Props) {
+export default function ForgotPasswordScreen({ navigation }: Props) {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -37,14 +37,11 @@ export function ForgotPasswordScreen({ navigation }: Props) {
 
     try {
       setLoading(true);
-      await authApi.forgotPassword(email);
+      await forgotPassword(email);
       setSent(true);
-      Alert.alert(
-        'Check your email',
-        'We\'ve sent a password reset link to ' + email + '. Check your inbox.'
-      );
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Failed to send reset link';
+      const errorMsg =
+        error instanceof Error ? error.message : 'Failed to send reset link';
       Alert.alert('Error', errorMsg);
     } finally {
       setLoading(false);
@@ -63,6 +60,7 @@ export function ForgotPasswordScreen({ navigation }: Props) {
       >
         <View style={styles.content}>
           <View style={styles.header}>
+            <Text style={styles.appName}>🎾 Final Serve-ivor</Text>
             <Text style={styles.title}>Reset Password</Text>
             <Text style={styles.subtitle}>
               {sent
@@ -94,7 +92,7 @@ export function ForgotPasswordScreen({ navigation }: Props) {
                 activeOpacity={0.7}
               >
                 {loading ? (
-                  <ActivityIndicator size="small" color={colours.text} />
+                  <ActivityIndicator size="small" color={colours.white} />
                 ) : (
                   <Text style={styles.buttonText}>Send Reset Link</Text>
                 )}
@@ -102,11 +100,12 @@ export function ForgotPasswordScreen({ navigation }: Props) {
             </View>
           ) : (
             <View style={styles.successContainer}>
-              <View style={styles.successBox}>
+              <View style={[styles.successBox, { backgroundColor: colours.successBg }]}>
                 <Text style={styles.successIcon}>✓</Text>
-                <Text style={styles.successTitle}>Link sent!</Text>
+                <Text style={styles.successTitle}>Check your email</Text>
                 <Text style={styles.successMessage}>
-                  We've sent a password reset link to your email. Click the link to create a new password.
+                  We've sent a password reset link to {email}. Click the link to create a new
+                  password.
                 </Text>
               </View>
             </View>
@@ -129,7 +128,7 @@ export function ForgotPasswordScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colours.background,
+    backgroundColor: colours.primary,
   },
   keyboardView: {
     flex: 1,
@@ -141,35 +140,49 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   header: {
-    marginTop: spacing.xl,
+    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.md,
+  },
+  appName: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: colours.white,
   },
   title: {
-    ...typography.h1,
-    marginBottom: spacing.sm,
+    fontSize: 28,
+    fontWeight: '800',
+    color: colours.white,
+    marginTop: spacing.md,
   },
   subtitle: {
-    ...typography.bodySmall,
-    color: colours.textSecondary,
+    fontSize: 15,
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginTop: spacing.xs,
   },
   form: {
-    marginVertical: spacing.xl,
+    backgroundColor: colours.surface,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
   },
   fieldContainer: {
     marginBottom: spacing.lg,
   },
   label: {
-    ...typography.label,
+    fontSize: 12,
+    fontWeight: '600',
+    color: colours.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
     marginBottom: spacing.sm,
   },
   input: {
-    backgroundColor: colours.surface,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colours.border,
     borderRadius: borderRadius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     color: colours.text,
-    fontSize: typography.body.fontSize,
+    fontSize: 15,
   },
   button: {
     backgroundColor: colours.primary,
@@ -183,44 +196,46 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   buttonText: {
-    ...typography.body,
     fontWeight: '600',
-    color: colours.text,
+    fontSize: 16,
+    color: colours.white,
   },
   successContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginVertical: spacing.xl,
+    paddingHorizontal: spacing.md,
   },
   successBox: {
-    backgroundColor: colours.surface,
-    borderRadius: borderRadius.lg,
+    borderWidth: 1.5,
+    borderColor: colours.successBorder,
+    borderRadius: borderRadius.md,
     padding: spacing.lg,
     alignItems: 'center',
-    borderLeftWidth: 4,
-    borderLeftColor: colours.success,
   },
   successIcon: {
     fontSize: 48,
-    color: colours.success,
+    color: colours.successDark,
     marginBottom: spacing.md,
   },
   successTitle: {
-    ...typography.h3,
+    fontSize: 18,
+    fontWeight: '700',
+    color: colours.successDark,
     marginBottom: spacing.sm,
   },
   successMessage: {
-    ...typography.bodySmall,
-    color: colours.textSecondary,
+    fontSize: 14,
+    color: colours.successDark,
     textAlign: 'center',
   },
   footer: {
     marginBottom: spacing.lg,
   },
   link: {
-    ...typography.body,
-    color: colours.primaryLight,
+    color: colours.white,
     textAlign: 'center',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

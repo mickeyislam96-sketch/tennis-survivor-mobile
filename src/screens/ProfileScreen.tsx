@@ -1,16 +1,23 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, Alert, ScrollView,
-  SafeAreaView, KeyboardAvoidingView, Platform, StyleSheet,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  ScrollView,
+  SafeAreaView,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
 import { updateProfile } from '../api/auth';
 import { colours, spacing, borderRadius } from '../theme';
 
-export function ProfileScreen() {
+export default function ProfileScreen() {
   const { user, logout, refreshUser } = useAuth();
-  const navigation = useNavigation<any>();
 
   const [displayName, setDisplayName] = useState(user?.displayName || '');
   const [email, setEmail] = useState(user?.email || '');
@@ -49,7 +56,7 @@ export function ProfileScreen() {
       await refreshUser();
       setCurrentPassword('');
       setNewPassword('');
-      Alert.alert('Saved', 'Your profile has been updated.');
+      Alert.alert('Success', 'Your profile has been updated.');
     } catch (e: any) {
       Alert.alert('Error', e.message);
     } finally {
@@ -58,10 +65,10 @@ export function ProfileScreen() {
   };
 
   const handleLogout = () => {
-    Alert.alert('Log out', 'Are you sure?', [
+    Alert.alert('Log Out', 'Are you sure you want to log out?', [
       { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Log out',
+        text: 'Log Out',
         style: 'destructive',
         onPress: async () => {
           await logout();
@@ -76,12 +83,26 @@ export function ProfileScreen() {
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Avatar */}
+          <View style={styles.avatarSection}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>
+                {user?.displayName?.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+            <Text style={styles.userName}>{user?.displayName}</Text>
+            <Text style={styles.userEmail}>{user?.email}</Text>
+          </View>
+
           {/* Profile section */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Profile</Text>
 
-            <Text style={styles.label}>Display name</Text>
+            <Text style={styles.label}>Display Name</Text>
             <TextInput
               style={styles.input}
               value={displayName}
@@ -104,9 +125,9 @@ export function ProfileScreen() {
 
           {/* Password section */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Change password</Text>
+            <Text style={styles.sectionTitle}>Change Password</Text>
 
-            <Text style={styles.label}>Current password</Text>
+            <Text style={styles.label}>Current Password</Text>
             <TextInput
               style={styles.input}
               value={currentPassword}
@@ -116,7 +137,7 @@ export function ProfileScreen() {
               secureTextEntry
             />
 
-            <Text style={styles.label}>New password</Text>
+            <Text style={styles.label}>New Password</Text>
             <TextInput
               style={styles.input}
               value={newPassword}
@@ -125,6 +146,9 @@ export function ProfileScreen() {
               placeholderTextColor={colours.textMuted}
               secureTextEntry
             />
+            {newPassword.length > 0 && newPassword.length < 8 && (
+              <Text style={styles.hint}>Min 8 characters</Text>
+            )}
           </View>
 
           {/* Save button */}
@@ -134,23 +158,17 @@ export function ProfileScreen() {
               onPress={handleSave}
               disabled={saving}
             >
-              <Text style={styles.saveButtonText}>
-                {saving ? 'Saving...' : 'Save changes'}
-              </Text>
+              {saving ? (
+                <ActivityIndicator size="small" color={colours.white} />
+              ) : (
+                <Text style={styles.saveButtonText}>Save Changes</Text>
+              )}
             </TouchableOpacity>
           )}
 
-          {/* Terms link */}
-          <TouchableOpacity
-            style={styles.linkButton}
-            onPress={() => navigation.navigate('Terms')}
-          >
-            <Text style={styles.linkText}>Terms & Conditions</Text>
-          </TouchableOpacity>
-
           {/* Logout */}
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <Text style={styles.logoutText}>Log out</Text>
+            <Text style={styles.logoutText}>Log Out</Text>
           </TouchableOpacity>
 
           <Text style={styles.version}>Final Serve-ivor v1.0.0</Text>
@@ -161,11 +179,48 @@ export function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colours.background },
-  scroll: { padding: spacing.md, paddingBottom: spacing.xxl },
+  container: {
+    flex: 1,
+    backgroundColor: colours.background,
+  },
+  scroll: {
+    padding: spacing.md,
+    paddingBottom: spacing.xl,
+  },
+  avatarSection: {
+    alignItems: 'center',
+    marginBottom: spacing.xl,
+    marginTop: spacing.lg,
+  },
+  avatar: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: colours.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+  },
+  avatarText: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: colours.white,
+  },
+  userName: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colours.text,
+  },
+  userEmail: {
+    fontSize: 14,
+    color: colours.textMuted,
+    marginTop: spacing.xs,
+  },
   section: {
     backgroundColor: colours.surface,
-    borderRadius: borderRadius.lg,
+    borderWidth: 1.5,
+    borderColor: colours.border,
+    borderRadius: borderRadius.md,
     padding: spacing.md,
     marginBottom: spacing.md,
   },
@@ -176,18 +231,26 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   label: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
     color: colours.textMuted,
-    marginBottom: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginBottom: spacing.xs,
     marginTop: spacing.sm,
   },
   input: {
-    backgroundColor: colours.surfaceLight,
-    borderRadius: borderRadius.sm,
+    borderWidth: 1.5,
+    borderColor: colours.border,
+    borderRadius: borderRadius.md,
     padding: spacing.md,
     color: colours.text,
-    fontSize: 16,
+    fontSize: 15,
+  },
+  hint: {
+    fontSize: 12,
+    color: colours.warning,
+    marginTop: spacing.xs,
   },
   saveButton: {
     backgroundColor: colours.primary,
@@ -196,25 +259,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: spacing.md,
   },
-  buttonDisabled: { opacity: 0.6 },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
   saveButtonText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 16,
-  },
-  linkButton: {
-    padding: spacing.md,
-    alignItems: 'center',
-  },
-  linkText: {
-    color: colours.primary,
-    fontSize: 14,
+    color: colours.white,
     fontWeight: '600',
+    fontSize: 16,
   },
   logoutButton: {
     padding: spacing.md,
     alignItems: 'center',
-    marginTop: spacing.sm,
+    marginTop: spacing.md,
+    marginBottom: spacing.md,
   },
   logoutText: {
     color: colours.danger,

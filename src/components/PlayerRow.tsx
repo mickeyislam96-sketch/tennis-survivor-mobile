@@ -1,24 +1,42 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Player } from '../api/picks';
-import { Badge } from './Badge';
 import { colours, spacing, borderRadius } from '../theme';
+import Badge from './Badge';
 
-interface Props {
-  player: Player;
+interface PlayerRowProps {
+  player: any;
+  isSelected: boolean;
+  isCurrentPick: boolean;
+  isUsed: boolean;
+  isPending: boolean;
+  pendingRound?: string;
   onPress: () => void;
   disabled?: boolean;
-  isCurrentPick?: boolean;
-  previousRoundLabel?: string;
 }
 
-export function PlayerRow({ player, onPress, disabled, isCurrentPick, previousRoundLabel = 'R64' }: Props) {
+const PlayerRow: React.FC<PlayerRowProps> = ({
+  player,
+  isSelected,
+  isCurrentPick,
+  isUsed,
+  isPending,
+  pendingRound = 'R64',
+  onPress,
+  disabled = false,
+}) => {
+  const opacity = isUsed ? 0.45 : 1;
+  const borderColor = isSelected ? '#86efac' : colours.border;
+  const bgColor = isCurrentPick ? '#f0fdf4' : colours.surface;
+
   return (
     <TouchableOpacity
       style={[
         styles.row,
-        isCurrentPick && styles.rowSelected,
-        disabled && styles.rowDisabled,
+        {
+          backgroundColor: bgColor,
+          borderColor,
+          opacity,
+        },
       ]}
       onPress={onPress}
       disabled={disabled}
@@ -26,55 +44,62 @@ export function PlayerRow({ player, onPress, disabled, isCurrentPick, previousRo
     >
       <View style={styles.left}>
         <View style={styles.nameRow}>
-          <Text style={[styles.name, isCurrentPick && styles.nameSelected]}>
+          <Text style={[styles.name, isCurrentPick && styles.nameCurrentPick]}>
             {player.name}
           </Text>
           {player.seed && (
-            <Text style={styles.seed}>[{player.seed}]</Text>
+            <View style={styles.seedBadge}>
+              <Text style={styles.seedText}>{player.seed}</Text>
+            </View>
           )}
         </View>
-        {player.pendingPrevRound && (
-          <Badge label={`\u26A0\uFE0F ${previousRoundLabel} result pending`} variant="warning" />
+        {isPending && (
+          <View style={styles.pendingBadgeWrapper}>
+            <Badge
+              label={`⚠️ ${pendingRound} result pending`}
+              variant="warning"
+              size="sm"
+            />
+          </View>
         )}
       </View>
+
       <View style={styles.right}>
         {isCurrentPick ? (
-          <View style={styles.pickedBadge}>
-            <Text style={styles.pickedText}>Your pick</Text>
+          <View style={styles.currentPickBadge}>
+            <Text style={styles.currentPickText}>Your pick</Text>
           </View>
         ) : (
-          <View style={styles.pickButton}>
+          <TouchableOpacity
+            style={styles.pickButton}
+            onPress={onPress}
+            disabled={disabled}
+            activeOpacity={0.8}
+          >
             <Text style={styles.pickButtonText}>Pick</Text>
-          </View>
+          </TouchableOpacity>
         )}
       </View>
     </TouchableOpacity>
   );
-}
+};
 
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colours.surface,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 12,
     marginHorizontal: spacing.md,
     marginBottom: spacing.xs,
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  rowSelected: {
-    borderColor: colours.primary,
-    backgroundColor: colours.successBg,
-  },
-  rowDisabled: {
-    opacity: 0.5,
+    borderBottomWidth: 1,
+    borderColor: colours.border,
+    borderRadius: borderRadius.sm,
+    gap: spacing.md,
   },
   left: {
     flex: 1,
-    marginRight: spacing.md,
   },
   nameRow: {
     flexDirection: 'row',
@@ -82,39 +107,58 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   name: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '500' as const,
     color: colours.text,
   },
-  nameSelected: {
-    color: colours.success,
+  nameCurrentPick: {
+    color: '#15803d',
   },
-  seed: {
+  seedBadge: {
+    fontWeight: '700' as const,
+    color: '#15803d',
+    backgroundColor: '#f0fdf4',
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: borderRadius.xs,
+    borderLeftWidth: 1,
+    borderLeftColor: '#d1fae5',
+  },
+  seedText: {
+    fontWeight: '700' as const,
+    color: '#15803d',
     fontSize: 13,
-    color: colours.textMuted,
-    fontWeight: '500',
   },
-  right: {},
+  pendingBadgeWrapper: {
+    marginTop: spacing.xs,
+  },
+  right: {
+    justifyContent: 'flex-end',
+  },
   pickButton: {
     backgroundColor: colours.primary,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.sm,
+    color: colours.white,
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+    borderRadius: borderRadius.full,
   },
   pickButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 14,
+    fontWeight: '600' as const,
+    fontSize: 13,
+    color: colours.white,
   },
-  pickedBadge: {
-    backgroundColor: colours.successBg,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.sm,
+  currentPickBadge: {
+    color: '#15803d',
+    backgroundColor: '#dcfce7',
+    borderRadius: borderRadius.full,
+    paddingVertical: 3,
+    paddingHorizontal: 10,
   },
-  pickedText: {
-    color: colours.success,
-    fontWeight: '600',
-    fontSize: 14,
+  currentPickText: {
+    fontSize: 11,
+    fontWeight: '600' as const,
+    color: '#15803d',
   },
 });
+
+export default PlayerRow;

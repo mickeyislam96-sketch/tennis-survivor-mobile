@@ -20,9 +20,9 @@ export const ROUND_LABELS: Record<string, string> = {
   F: 'Final',
 };
 
-// Status colours
+// Status colours (matches web CSS)
 export const PICK_RESULT_COLOURS = {
-  survived: '#4CAF50',
-  eliminated: '#EF5350',
-  pending: '#607D8B',
+  survived: '#16a34a',  // --success / --accent
+  eliminated: '#dc2626', // --danger
+  pending: '#64748b',    // --text-muted
 } as const;

@@ -2,39 +2,74 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { colours, spacing, borderRadius } from '../theme';
 
-type BadgeVariant = 'success' | 'warning' | 'danger' | 'info' | 'muted';
-
-interface Props {
+interface BadgeProps {
   label: string;
-  variant?: BadgeVariant;
+  variant: 'success' | 'warning' | 'danger' | 'info' | 'muted' | 'live';
+  size?: 'sm' | 'md';
 }
 
-const VARIANT_STYLES: Record<BadgeVariant, { bg: string; text: string }> = {
-  success: { bg: colours.successBg, text: colours.success },
-  warning: { bg: colours.warningBg, text: colours.warning },
-  danger: { bg: colours.dangerBg, text: colours.danger },
-  info: { bg: colours.infoBg, text: colours.info },
-  muted: { bg: colours.surfaceLight, text: colours.textMuted },
-};
+const Badge: React.FC<BadgeProps> = ({ label, variant, size = 'md' }) => {
+  const variantStyles = {
+    success: {
+      bg: '#dcfce7',
+      text: '#15803d',
+    },
+    warning: {
+      bg: '#fef3c7',
+      text: '#d97706',
+    },
+    danger: {
+      bg: '#fee2e2',
+      text: '#dc2626',
+    },
+    info: {
+      bg: '#dbeafe',
+      text: '#2563eb',
+    },
+    muted: {
+      bg: '#f1f5f9',
+      text: '#64748b',
+    },
+    live: {
+      bg: '#fee2e2',
+      text: '#ef4444',
+    },
+  };
 
-export function Badge({ label, variant = 'muted' }: Props) {
-  const v = VARIANT_STYLES[variant];
+  const style = variantStyles[variant];
+  const sizeStyle = size === 'sm' ? styles.badgeSm : styles.badgeMd;
+  const textSizeStyle = size === 'sm' ? styles.textSm : styles.textMd;
+
   return (
-    <View style={[styles.badge, { backgroundColor: v.bg }]}>
-      <Text style={[styles.text, { color: v.text }]}>{label}</Text>
+    <View style={[styles.badge, sizeStyle, { backgroundColor: style.bg }]}>
+      <Text style={[textSizeStyle, { color: style.text }]}>{label}</Text>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   badge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: borderRadius.sm,
+    borderRadius: borderRadius.full,
     alignSelf: 'flex-start',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  text: {
-    fontSize: 11,
-    fontWeight: '600',
+  badgeSm: {
+    paddingVertical: 2,
+    paddingHorizontal: spacing.sm,
+  },
+  badgeMd: {
+    paddingVertical: 3,
+    paddingHorizontal: 10,
+  },
+  textSm: {
+    fontSize: 10,
+    fontWeight: '600' as const,
+  },
+  textMd: {
+    fontSize: 12,
+    fontWeight: '600' as const,
   },
 });
+
+export default Badge;

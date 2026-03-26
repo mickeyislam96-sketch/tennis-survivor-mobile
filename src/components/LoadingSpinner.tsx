@@ -2,18 +2,18 @@ import React from 'react';
 import { View, ActivityIndicator, Text, StyleSheet } from 'react-native';
 import { colours, spacing } from '../theme';
 
-interface Props {
+interface LoadingSpinnerProps {
   message?: string;
 }
 
-export function LoadingSpinner({ message }: Props) {
+const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ message }) => {
   return (
     <View style={styles.container}>
       <ActivityIndicator size="large" color={colours.primary} />
-      {message && <Text style={styles.text}>{message}</Text>}
+      {message && <Text style={styles.message}>{message}</Text>}
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -21,11 +21,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: colours.background,
-    padding: spacing.xl,
+    paddingHorizontal: spacing.md,
   },
-  text: {
-    color: colours.textSecondary,
+  message: {
     fontSize: 14,
+    color: colours.textSecondary,
     marginTop: spacing.md,
+    textAlign: 'center',
   },
 });
+
+export default LoadingSpinner;

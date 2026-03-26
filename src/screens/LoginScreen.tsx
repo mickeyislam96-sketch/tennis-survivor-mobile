@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
-import { colours, spacing, borderRadius, typography } from '../theme';
+import { colours, spacing, borderRadius } from '../theme';
 
 type RootStackParamList = {
   Login: undefined;
@@ -24,7 +24,7 @@ type RootStackParamList = {
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
-export function LoginScreen({ navigation }: Props) {
+export default function LoginScreen({ navigation }: Props) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -39,10 +39,9 @@ export function LoginScreen({ navigation }: Props) {
     try {
       setLoading(true);
       await login(email, password);
-      // Navigation will be handled by the auth flow logic in the main navigator
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Login failed';
-      Alert.alert('Login Error', errorMsg);
+      Alert.alert('Sign In Error', errorMsg);
     } finally {
       setLoading(false);
     }
@@ -56,10 +55,9 @@ export function LoginScreen({ navigation }: Props) {
       >
         <View style={styles.content}>
           <View style={styles.header}>
+            <Text style={styles.appName}>🎾 Final Serve-ivor</Text>
             <Text style={styles.title}>Sign In</Text>
-            <Text style={styles.subtitle}>
-              Welcome back to Final Serve-ivor
-            </Text>
+            <Text style={styles.subtitle}>Welcome back</Text>
           </View>
 
           <View style={styles.form}>
@@ -97,7 +95,7 @@ export function LoginScreen({ navigation }: Props) {
               activeOpacity={0.7}
             >
               {loading ? (
-                <ActivityIndicator size="small" color={colours.text} />
+                <ActivityIndicator size="small" color={colours.white} />
               ) : (
                 <Text style={styles.buttonText}>Sign In</Text>
               )}
@@ -131,7 +129,7 @@ export function LoginScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colours.background,
+    backgroundColor: colours.primary,
   },
   keyboardView: {
     flex: 1,
@@ -143,35 +141,49 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   header: {
-    marginTop: spacing.xl,
+    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.md,
+  },
+  appName: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: colours.white,
   },
   title: {
-    ...typography.h1,
-    marginBottom: spacing.sm,
+    fontSize: 28,
+    fontWeight: '800',
+    color: colours.white,
+    marginTop: spacing.md,
   },
   subtitle: {
-    ...typography.bodySmall,
-    color: colours.textSecondary,
+    fontSize: 15,
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginTop: spacing.xs,
   },
   form: {
-    marginVertical: spacing.xl,
+    backgroundColor: colours.surface,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
   },
   fieldContainer: {
     marginBottom: spacing.lg,
   },
   label: {
-    ...typography.label,
+    fontSize: 12,
+    fontWeight: '600',
+    color: colours.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
     marginBottom: spacing.sm,
   },
   input: {
-    backgroundColor: colours.surface,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colours.border,
     borderRadius: borderRadius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     color: colours.text,
-    fontSize: typography.body.fontSize,
+    fontSize: 15,
   },
   button: {
     backgroundColor: colours.primary,
@@ -185,18 +197,19 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   buttonText: {
-    ...typography.body,
     fontWeight: '600',
-    color: colours.text,
+    fontSize: 16,
+    color: colours.white,
   },
   footer: {
     marginBottom: spacing.lg,
   },
   link: {
-    ...typography.body,
-    color: colours.primaryLight,
+    color: colours.primary,
     textAlign: 'center',
     marginBottom: spacing.lg,
+    fontSize: 14,
+    fontWeight: '600',
   },
   registerPrompt: {
     flexDirection: 'row',
@@ -204,12 +217,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   registerText: {
-    ...typography.body,
     color: colours.textSecondary,
+    fontSize: 14,
   },
   registerLink: {
-    ...typography.body,
-    color: colours.primaryLight,
+    color: colours.primary,
     fontWeight: '600',
+    fontSize: 14,
   },
 });

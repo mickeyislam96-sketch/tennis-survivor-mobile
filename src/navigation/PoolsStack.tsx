@@ -1,12 +1,12 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { PoolsScreen } from '../screens/PoolsScreen';
-import { GroupScreen } from '../screens/GroupScreen';
-import { PickScreen } from '../screens/PickScreen';
-import { LeaderboardScreen } from '../screens/LeaderboardScreen';
-import { DrawScreen } from '../screens/DrawScreen';
-import { PickHistoryScreen } from '../screens/PickHistoryScreen';
-import { JoinScreen } from '../screens/JoinScreen';
+import PoolsScreen from '../screens/PoolsScreen';
+import GroupScreen from '../screens/GroupScreen';
+import PickScreen from '../screens/PickScreen';
+import LeaderboardScreen from '../screens/LeaderboardScreen';
+import DrawScreen from '../screens/DrawScreen';
+import PickHistoryScreen from '../screens/PickHistoryScreen';
+import JoinScreen from '../screens/JoinScreen';
 import { colours } from '../theme';
 
 export type PoolsStackParamList = {

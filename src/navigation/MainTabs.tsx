@@ -1,7 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { PoolsStack } from './PoolsStack';
-import { MyPicksScreen } from '../screens/MyPicksScreen';
+import MyPicksScreen from '../screens/MyPicksScreen';
 import { ProfileStack } from './ProfileStack';
 import { colours } from '../theme';
 import { View, Text, StyleSheet } from 'react-native';
@@ -17,14 +17,14 @@ const Tab = createBottomTabNavigator<MainTabsParamList>();
 // Simple icon components (no external icon library needed)
 function TabIcon({ label, focused }: { label: string; focused: boolean }) {
   const icons: Record<string, string> = {
-    Pools: '🎾',
-    'My Picks': '✅',
-    Profile: '👤',
+    Pools: '\u{1F3BE}',
+    'My Picks': '\u2705',
+    Profile: '\u{1F464}',
   };
   return (
     <View style={iconStyles.container}>
       <Text style={[iconStyles.emoji, focused && iconStyles.emojiActive]}>
-        {icons[label] || '●'}
+        {icons[label] || '\u25CF'}
       </Text>
     </View>
   );

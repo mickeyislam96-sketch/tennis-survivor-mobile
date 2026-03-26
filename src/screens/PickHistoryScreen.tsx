@@ -1,124 +1,186 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import {
-  View, Text, FlatList, RefreshControl, SafeAreaView, StyleSheet,
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  RefreshControl,
+  SafeAreaView,
 } from 'react-native';
-import { useRoute } from '@react-navigation/native';
-import { getPickHistory, Pick } from '../api/picks';
-import { LoadingSpinner } from '../components/LoadingSpinner';
-import { ErrorMessage } from '../components/ErrorMessage';
-import { EmptyState } from '../components/EmptyState';
-import { Badge } from '../components/Badge';
 import { colours, spacing, borderRadius, shadows } from '../theme';
-import { ROUND_LABELS, ROUND_ORDER } from '../utils/constants';
+import { getPickHistory } from '../api/picks';
+import { useAuth } from '../context/AuthContext';
+import LoadingSpinner from '../components/LoadingSpinner';
+import EmptyState from '../components/EmptyState';
+import { ROUND_ORDER, ROUND_LABELS } from '../utils/constants';
 
-export function PickHistoryScreen() {
-  const route = useRoute<any>();
+interface PickHistoryScreenProps {
+  route: {
+    params: {
+      groupId: string;
+    };
+  };
+}
+
+interface Pick {
+  id: string;
+  round: string;
+  playerName: string;
+  survived: boolean | null;
+}
+
+export default function PickHistoryScreen({ route }: PickHistoryScreenProps) {
   const { groupId } = route.params;
-
+  const { user } = useAuth();
   const [picks, setPicks] = useState<Pick[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const loadData = useCallback(async () => {
+  const loadPickHistory = useCallback(async () => {
+    if (!user?.id) return;
     try {
-      const data = await getPickHistory(groupId);
-      // Sort by round order
-      const sorted = [...data].sort((a, b) => {
-        return ROUND_ORDER.indexOf(a.round as any) - ROUND_ORDER.indexOf(b.round as any);
+      setLoading(true);
+      const history = await getPickHistory(groupId);
+      const sorted = (history || []).sort((a: any, b: any) => {
+        const indexA = ROUND_ORDER.indexOf(a.round as any);
+        const indexB = ROUND_ORDER.indexOf(b.round as any);
+        return indexA - indexB;
       });
       setPicks(sorted);
-      setError(null);
-    } catch (e: any) {
-      setError(e.message);
+    } catch (error) {
+      console.error('Failed to load pick history:', error);
     } finally {
       setLoading(false);
     }
-  }, [groupId]);
+  }, [user?.id, groupId]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => {
+    loadPickHistory();
+  }, [loadPickHistory]);
 
-  const onRefresh = async () => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await loadData();
+    await loadPickHistory();
     setRefreshing(false);
-  };
+  }, [loadPickHistory]);
 
-  if (loading) return <LoadingSpinner message="Loading history..." />;
-  if (error) return <ErrorMessage message={error} onRetry={loadData} />;
+  const renderPick = ({ item }: { item: Pick }) => {
+    const statusColors = {
+      survived: { bg: colours.successBg, text: colours.successDark },
+      eliminated: { bg: colours.dangerBg, text: colours.dangerDark },
+      pending: { bg: colours.gray100, text: colours.gray500 },
+    };
 
-  const getResultVariant = (survived: boolean | null) => {
-    if (survived === true) return 'success';
-    if (survived === false) return 'danger';
-    return 'muted';
-  };
+    const statusLabel = {
+      survived: 'Survived',
+      eliminated: 'Eliminated',
+      pending: 'Pending',
+    };
 
-  const getResultLabel = (survived: boolean | null) => {
-    if (survived === true) return 'Survived';
-    if (survived === false) return 'Eliminated';
-    return 'Pending';
-  };
+    let status: keyof typeof statusColors;
+    let label: string;
 
-  const renderPick = ({ item }: { item: Pick }) => (
-    <View style={[styles.card, shadows.card]}>
-      <View style={styles.cardHeader}>
-        <Text style={styles.round}>{ROUND_LABELS[item.round] || item.round}</Text>
-        <Badge
-          label={getResultLabel(item.survived)}
-          variant={getResultVariant(item.survived)}
-        />
+    if (item.survived === true) {
+      status = 'survived';
+      label = 'Survived';
+    } else if (item.survived === false) {
+      status = 'eliminated';
+      label = 'Eliminated';
+    } else {
+      status = 'pending';
+      label = 'Pending';
+    }
+
+    const color = statusColors[status];
+
+    return (
+      <View style={styles.pickCard}>
+        <View style={styles.pickHeader}>
+          <Text style={styles.roundLabel}>{ROUND_LABELS[item.round]}</Text>
+          <View style={[styles.statusPill, { backgroundColor: color.bg }]}>
+            <Text style={[styles.statusText, { color: color.text }]}>{label}</Text>
+          </View>
+        </View>
+        <Text style={styles.playerName}>{item.playerName}</Text>
       </View>
-      <Text style={[
-        styles.playerName,
-        item.survived === true && { color: colours.success },
-        item.survived === false && { color: colours.danger },
-      ]}>
-        {item.playerName}
-      </Text>
-    </View>
-  );
+    );
+  };
+
+  const keyExtractor = (item: Pick) => item.id;
+
+  if (loading) {
+    return <LoadingSpinner />;
+  }
+
+  if (picks.length === 0) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <EmptyState
+          icon="📋"
+          title="No picks yet"
+          message="Join a pool and make your first pick"
+        />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <FlatList
         data={picks}
-        keyExtractor={(item) => item.id}
         renderItem={renderPick}
+        keyExtractor={keyExtractor}
+        contentContainerStyle={styles.listContent}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colours.primary} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
-        ListEmptyComponent={
-          <EmptyState title="No picks yet" message="You haven't made any picks in this pool yet." />
-        }
-        contentContainerStyle={picks.length === 0 ? { flex: 1 } : { padding: spacing.md, paddingBottom: spacing.xxl }}
+        scrollEnabled
       />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colours.background },
-  card: {
+  container: {
+    flex: 1,
+    backgroundColor: colours.background,
+  },
+  listContent: {
+    padding: spacing.md,
+    paddingBottom: spacing.xl,
+  },
+  pickCard: {
     backgroundColor: colours.surface,
+    borderWidth: 1.5,
+    borderColor: colours.border,
     borderRadius: borderRadius.md,
     padding: spacing.md,
     marginBottom: spacing.sm,
   },
-  cardHeader: {
+  pickHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.xs,
+    marginBottom: spacing.sm,
   },
-  round: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colours.textMuted,
+  roundLabel: {
+    fontSize: 11,
+    fontWeight: '700',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
+    color: colours.textMuted,
+  },
+  statusPill: {
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: borderRadius.full,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   playerName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
     color: colours.text,
   },

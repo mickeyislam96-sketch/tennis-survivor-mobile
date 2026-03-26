@@ -1,46 +1,65 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  View, Text, TouchableOpacity, Alert, SafeAreaView, StyleSheet,
+  View,
+  Text,
+  TouchableOpacity,
+  Alert,
+  SafeAreaView,
+  StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useRoute, useNavigation } from '@react-navigation/native';
-import { getGroupByInvite, joinGroup, Group } from '../api/groups';
+import { getGroupByInvite, joinGroup } from '../api/groups';
 import { useAuth } from '../context/AuthContext';
-import { LoadingSpinner } from '../components/LoadingSpinner';
-import { ErrorMessage } from '../components/ErrorMessage';
-import { Badge } from '../components/Badge';
 import { colours, spacing, borderRadius, shadows } from '../theme';
+import LoadingSpinner from '../components/LoadingSpinner';
 
-export function JoinScreen() {
-  const route = useRoute<any>();
+interface Group {
+  id: string;
+  name: string;
+  tournamentId?: string;
+  entryFeeCents: number;
+  members?: Array<{ userId: string }>;
+}
+
+interface JoinScreenProps {
+  route: {
+    params: {
+      code: string;
+    };
+  };
+}
+
+export default function JoinScreen({ route }: JoinScreenProps) {
+  const { code } = route.params;
   const navigation = useNavigation<any>();
   const { user } = useAuth();
-  const { code } = route.params;
 
   const [group, setGroup] = useState<Group | null>(null);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const loadGroup = useCallback(async () => {
     try {
+      setLoading(true);
       const g = await getGroupByInvite(code);
       setGroup(g);
-      setError(null);
     } catch (e: any) {
-      setError(e.message);
+      Alert.alert('Error', e.message || 'Failed to load pool');
     } finally {
       setLoading(false);
     }
   }, [code]);
 
-  useEffect(() => { loadGroup(); }, [loadGroup]);
+  useEffect(() => {
+    loadGroup();
+  }, [loadGroup]);
 
   const handleJoin = async () => {
     if (!group || !user) return;
 
-    // Check if already a member
-    const isMember = group.members?.some(m => m.userId === user.id);
+    const isMember = group.members?.some((m) => m.userId === user.id);
     if (isMember) {
       navigation.replace('Group', { groupId: group.id });
       return;
@@ -52,17 +71,29 @@ export function JoinScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.replace('Group', { groupId: group.id });
     } catch (e: any) {
-      Alert.alert('Error', e.message);
+      Alert.alert('Error', e.message || 'Failed to join pool');
     } finally {
       setJoining(false);
     }
   };
 
-  if (loading) return <LoadingSpinner message="Loading pool..." />;
-  if (error) return <ErrorMessage message={error} onRetry={loadGroup} />;
-  if (!group) return <ErrorMessage message="Pool not found" />;
+  if (loading) {
+    return <LoadingSpinner />;
+  }
 
-  const isMember = group.members?.some(m => m.userId === user?.id);
+  if (!group) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.content}>
+          <View style={[styles.card, shadows.card]}>
+            <Text style={styles.errorText}>Pool not found</Text>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const isMember = group.members?.some((m) => m.userId === user?.id);
   const memberCount = group.members?.length || 0;
 
   return (
@@ -75,14 +106,18 @@ export function JoinScreen() {
             <Text style={styles.tournament}>{group.tournamentId}</Text>
           )}
 
+          <View style={styles.divider} />
+
           <View style={styles.statsRow}>
             <View style={styles.stat}>
               <Text style={styles.statValue}>{memberCount}</Text>
-              <Text style={styles.statLabel}>Players</Text>
+              <Text style={styles.statLabel}>Members</Text>
             </View>
             <View style={styles.stat}>
               <Text style={styles.statValue}>
-                {group.entryFeeCents === 0 ? 'Free' : `\u00A3${(group.entryFeeCents / 100).toFixed(0)}`}
+                {group.entryFeeCents === 0
+                  ? 'Free'
+                  : `£${(group.entryFeeCents / 100).toFixed(0)}`}
               </Text>
               <Text style={styles.statLabel}>Entry</Text>
             </View>
@@ -90,20 +125,22 @@ export function JoinScreen() {
 
           {isMember ? (
             <TouchableOpacity
-              style={styles.button}
+              style={[styles.button, styles.buttonGo]}
               onPress={() => navigation.replace('Group', { groupId: group.id })}
             >
               <Text style={styles.buttonText}>Go to Pool</Text>
             </TouchableOpacity>
           ) : (
             <TouchableOpacity
-              style={[styles.button, joining && styles.buttonDisabled]}
+              style={[styles.button, styles.buttonJoin, joining && styles.buttonDisabled]}
               onPress={handleJoin}
               disabled={joining}
             >
-              <Text style={styles.buttonText}>
-                {joining ? 'Joining...' : 'Join Pool'}
-              </Text>
+              {joining ? (
+                <ActivityIndicator size="small" color={colours.white} />
+              ) : (
+                <Text style={styles.buttonText}>Join Pool</Text>
+              )}
             </TouchableOpacity>
           )}
         </View>
@@ -113,7 +150,10 @@ export function JoinScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colours.background },
+  container: {
+    flex: 1,
+    backgroundColor: colours.background,
+  },
   content: {
     flex: 1,
     justifyContent: 'center',
@@ -121,14 +161,19 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: colours.surface,
-    borderRadius: borderRadius.lg,
+    borderWidth: 1.5,
+    borderColor: colours.border,
+    borderRadius: borderRadius.md,
     padding: spacing.xl,
     alignItems: 'center',
   },
-  emoji: { fontSize: 48, marginBottom: spacing.md },
+  emoji: {
+    fontSize: 48,
+    marginBottom: spacing.md,
+  },
   groupName: {
     fontSize: 22,
-    fontWeight: '700',
+    fontWeight: '800',
     color: colours.text,
     textAlign: 'center',
     marginBottom: spacing.xs,
@@ -138,32 +183,57 @@ const styles = StyleSheet.create({
     color: colours.textMuted,
     marginBottom: spacing.lg,
   },
+  divider: {
+    height: 1,
+    backgroundColor: colours.border,
+    width: '100%',
+    marginVertical: spacing.lg,
+  },
   statsRow: {
     flexDirection: 'row',
-    gap: spacing.xxl,
+    justifyContent: 'space-around',
+    width: '100%',
     marginBottom: spacing.lg,
   },
-  stat: { alignItems: 'center' },
-  statValue: { fontSize: 22, fontWeight: '700', color: colours.text },
+  stat: {
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: colours.text,
+  },
   statLabel: {
     fontSize: 11,
     color: colours.textMuted,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginTop: 2,
+    letterSpacing: 0.8,
+    marginTop: spacing.xs,
   },
   button: {
-    backgroundColor: colours.primary,
-    paddingHorizontal: spacing.xxl,
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.md,
     width: '100%',
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  buttonDisabled: { opacity: 0.6 },
+  buttonJoin: {
+    backgroundColor: colours.primary,
+  },
+  buttonGo: {
+    backgroundColor: colours.primary,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
   buttonText: {
-    color: '#fff',
-    fontWeight: '700',
+    color: colours.white,
+    fontWeight: '600',
     fontSize: 16,
+  },
+  errorText: {
+    fontSize: 16,
+    color: colours.danger,
+    textAlign: 'center',
   },
 });

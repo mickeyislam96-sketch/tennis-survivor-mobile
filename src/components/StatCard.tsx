@@ -1,42 +1,45 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colours, spacing, borderRadius, shadows } from '../theme';
+import { colours, spacing } from '../theme';
 
-interface Props {
+interface StatCardProps {
   label: string;
   value: string | number;
-  colour?: string;
+  color?: string;
 }
 
-export function StatCard({ label, value, colour }: Props) {
+const StatCard: React.FC<StatCardProps> = ({ label, value, color }) => {
+  const valueColor = color || colours.text;
+
   return (
-    <View style={[styles.card, shadows.card]}>
-      <Text style={[styles.value, colour ? { color: colour } : null]}>{value}</Text>
+    <View style={styles.card}>
+      <Text style={[styles.value, { color: valueColor }]}>{value}</Text>
       <Text style={styles.label}>{label}</Text>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colours.surface,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 72,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
   },
   value: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colours.text,
+    fontSize: 22,
+    fontWeight: '800' as const,
+    letterSpacing: -0.3,
   },
   label: {
-    fontSize: 12,
-    fontWeight: '500',
+    fontSize: 11,
+    fontWeight: '600' as const,
     color: colours.textMuted,
     marginTop: 4,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 0.8,
   },
 });
+
+export default StatCard;

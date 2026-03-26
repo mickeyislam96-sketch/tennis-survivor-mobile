@@ -1,134 +1,171 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Pool } from '../api/groups';
-import { Badge } from './Badge';
 import { colours, spacing, borderRadius, shadows } from '../theme';
+import Badge from './Badge';
 
-interface Props {
-  pool: Pool;
+interface PoolCardProps {
+  pool: any;
   onPress: () => void;
+  isMember?: boolean;
 }
 
-export function PoolCard({ pool, onPress }: Props) {
-  const isUpcoming = pool.tournament?.status === 'upcoming';
-  const isActive = pool.tournament?.status === 'active';
+const PoolCard: React.FC<PoolCardProps> = ({ pool, onPress, isMember = false }) => {
+  const isUpcoming = pool.status === 'upcoming';
+  const isActive = pool.status === 'active';
+  const isFree = pool.entry === 0 || pool.entryFeeCents === 0;
+
+  // Extract location and dates
+  const location = pool.location || '';
+  const dateRange = pool.dateRange || '';
 
   return (
-    <TouchableOpacity style={[styles.card, shadows.card]} onPress={onPress} activeOpacity={0.7}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.name}>{pool.tournament?.name || pool.name}</Text>
-        {isUpcoming && <Badge label="Upcoming" variant="info" />}
-        {isActive && <Badge label="Live" variant="success" />}
-      </View>
-
-      {/* Location */}
-      {pool.tournament?.location && (
-        <Text style={styles.location}>{pool.tournament.location}</Text>
-      )}
-
-      {/* Stats row */}
-      <View style={styles.statsRow}>
-        <View style={styles.stat}>
-          <Text style={styles.statValue}>{pool.memberCount}</Text>
-          <Text style={styles.statLabel}>Players</Text>
-        </View>
-        {isActive && (
-          <View style={styles.stat}>
-            <Text style={[styles.statValue, { color: colours.success }]}>{pool.aliveCount}</Text>
-            <Text style={styles.statLabel}>Alive</Text>
+    <TouchableOpacity
+      style={[styles.card, shadows.sm]}
+      onPress={onPress}
+      activeOpacity={0.8}
+    >
+      {/* Top row: name, badge, entry fee */}
+      <View style={styles.topRow}>
+        <View style={styles.titleSection}>
+          <View style={styles.badgeWrapper}>
+            {isUpcoming && <Badge label="Coming Soon" variant="info" size="sm" />}
+            {isActive && <Badge label="Live" variant="live" size="sm" />}
           </View>
-        )}
-        <View style={styles.stat}>
-          <Text style={styles.statValue}>
-            {pool.entryFeeCents === 0 ? 'Free' : `\u00A3${(pool.entryFeeCents / 100).toFixed(0)}`}
-          </Text>
-          <Text style={styles.statLabel}>Entry</Text>
+          <Text style={styles.name}>{pool.name || pool.tournament}</Text>
+          {location && (
+            <Text style={styles.meta}>
+              {location}
+              {dateRange && ` • ${dateRange}`}
+            </Text>
+          )}
+        </View>
+
+        <View style={styles.entryBadge}>
+          {isFree ? (
+            <Text style={styles.entryFree}>Free</Text>
+          ) : (
+            <Text style={styles.entryPaid}>£{pool.entry}</Text>
+          )}
         </View>
       </View>
 
-      {/* CTA */}
-      <View style={styles.cta}>
-        {pool.isMember ? (
-          <Text style={styles.ctaTextJoined}>View Pool</Text>
-        ) : isUpcoming ? (
-          <View style={styles.ctaButton}>
-            <Text style={styles.ctaButtonText}>Enter Free</Text>
-          </View>
-        ) : (
-          <Text style={styles.ctaTextJoined}>Join</Text>
-        )}
+      {/* Divider */}
+      <View style={styles.divider} />
+
+      {/* Bottom row: stats and CTA */}
+      <View style={styles.bottomRow}>
+        <View style={styles.statsList}>
+          <Text style={styles.stat}>👥 {pool.memberCount || 0} players</Text>
+          {isActive && (
+            <Text style={styles.stat}>✓ {pool.aliveCount || 0} alive</Text>
+          )}
+          {!pool.drawAvailable && <Text style={styles.stat}>📅 Draw TBC</Text>}
+          {pool.startDate && (
+            <Text style={styles.stat}>📅 Starts {pool.startDate}</Text>
+          )}
+        </View>
+
+        <View style={styles.ctaSection}>
+          {isMember ? (
+            <Text style={styles.ctaText}>View Pool →</Text>
+          ) : isUpcoming ? (
+            <Text style={styles.ctaText}>Enter Free →</Text>
+          ) : (
+            <Text style={styles.ctaText}>View Pool →</Text>
+          )}
+        </View>
       </View>
     </TouchableOpacity>
   );
-}
+};
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colours.surface,
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
+    backgroundColor: colours.white,
+    borderRadius: borderRadius.md,
+    padding: 16,
     marginHorizontal: spacing.md,
     marginBottom: spacing.md,
+    borderWidth: 1.5,
+    borderColor: colours.border,
   },
-  header: {
+  topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
+    alignItems: 'flex-start',
+    marginBottom: spacing.md,
+  },
+  titleSection: {
+    flex: 1,
+    marginRight: spacing.md,
+  },
+  badgeWrapper: {
+    marginBottom: spacing.xs,
   },
   name: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 17,
+    fontWeight: '800' as const,
     color: colours.text,
-    flex: 1,
-    marginRight: spacing.sm,
+    letterSpacing: -0.2,
+    marginBottom: 4,
   },
-  location: {
+  meta: {
     fontSize: 13,
     color: colours.textMuted,
-    marginBottom: spacing.sm,
+    fontWeight: '500' as const,
   },
-  statsRow: {
+  entryBadge: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  entryFree: {
+    fontWeight: '700' as const,
+    fontSize: 12,
+    color: '#15803d',
+    backgroundColor: '#f0fdf4',
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: borderRadius.xs,
+  },
+  entryPaid: {
+    fontWeight: '700' as const,
+    fontSize: 12,
+    color: '#2563eb',
+    backgroundColor: '#eff6ff',
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: borderRadius.xs,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: colours.border,
+    marginVertical: spacing.md,
+  },
+  bottomRow: {
     flexDirection: 'row',
-    gap: spacing.lg,
-    marginBottom: spacing.md,
-    paddingTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: colours.border,
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingTop: spacing.md,
+    marginTop: spacing.sm,
+  },
+  statsList: {
+    flex: 1,
+    gap: spacing.xs,
   },
   stat: {
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colours.text,
-  },
-  statLabel: {
-    fontSize: 11,
+    fontSize: 12.5,
     color: colours.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginTop: 2,
+    fontWeight: '500' as const,
+    marginBottom: 4,
   },
-  cta: {
-    alignItems: 'center',
+  ctaSection: {
+    marginLeft: spacing.lg,
   },
-  ctaTextJoined: {
+  ctaText: {
+    fontSize: 13,
+    fontWeight: '700' as const,
     color: colours.primary,
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  ctaButton: {
-    backgroundColor: colours.primary,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.sm,
-  },
-  ctaButtonText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 14,
   },
 });
+
+export default PoolCard;

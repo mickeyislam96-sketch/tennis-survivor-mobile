@@ -5,9 +5,10 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { AuthStack } from './AuthStack';
 import { MainTabs } from './MainTabs';
-import { LoadingSpinner } from '../components/LoadingSpinner';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { colours } from '../theme';
 import * as Linking from 'expo-linking';
+import { useNotifications } from '../hooks/useNotifications';
 
 // Deep linking configuration
 const linking = {
@@ -31,6 +32,9 @@ const linking = {
 
 function AppNavigator() {
   const { user, loading } = useAuth();
+
+  // Set up push notifications when user is logged in
+  useNotifications();
 
   if (loading) {
     return <LoadingSpinner message="Loading..." />;

@@ -3,76 +3,113 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useCountdown } from '../hooks/useCountdown';
 import { colours, spacing, borderRadius } from '../theme';
 
-interface Props {
-  targetDate: string | null;
+interface CountdownProps {
+  targetDate: string;
   label?: string;
   compact?: boolean;
+  isFuture?: boolean;
 }
 
-export function Countdown({ targetDate, label = 'Picks lock in', compact = false }: Props) {
-  const { display, isExpired, isUrgent } = useCountdown(targetDate);
+const Countdown: React.FC<CountdownProps> = ({
+  targetDate,
+  label = 'Closes in',
+  compact = false,
+  isFuture = false,
+}) => {
+  const { display, isExpired } = useCountdown(targetDate);
 
   if (isExpired) {
     return compact ? null : (
-      <View style={[styles.container, styles.locked]}>
+      <View style={styles.containerLocked}>
         <Text style={styles.lockedText}>Round Locked</Text>
       </View>
     );
   }
 
-  const bgColor = isUrgent ? colours.warningBg : colours.surfaceLight;
-  const textColor = isUrgent ? colours.warning : colours.primary;
+  // Future state: blue card
+  if (isFuture) {
+    if (compact) {
+      return <Text style={[styles.compactText, { color: '#1d4ed8' }]}>{display}</Text>;
+    }
 
-  if (compact) {
     return (
-      <Text style={[styles.compactText, { color: textColor }]}>{display}</Text>
+      <View
+        style={[
+          styles.container,
+          styles.containerFuture,
+          { backgroundColor: '#eff6ff', borderColor: '#bfdbfe' },
+        ]}
+      >
+        <Text style={[styles.label, { color: '#1e40af' }]}>Opens in</Text>
+        <Text style={[styles.time, { color: '#1d4ed8', fontFamily: 'monospace' }]}>
+          {display}
+        </Text>
+      </View>
     );
   }
 
+  // Open state: amber card
+  if (compact) {
+    return <Text style={[styles.compactText, { color: '#78350f' }]}>{display}</Text>;
+  }
+
   return (
-    <View style={[styles.container, { backgroundColor: bgColor }]}>
-      <Text style={[styles.label, { color: colours.textMuted }]}>{label}</Text>
-      <Text style={[styles.time, { color: textColor }]}>{display}</Text>
-      {isUrgent && <Text style={styles.urgentHint}>Make your pick now!</Text>}
+    <View
+      style={[
+        styles.container,
+        styles.containerOpen,
+        { backgroundColor: '#fffbeb', borderColor: '#fde68a' },
+      ]}
+    >
+      <Text style={[styles.label, { color: '#92400e' }]}>{label}</Text>
+      <Text style={[styles.time, { color: '#78350f', fontFamily: 'monospace' }]}>
+        {display}
+      </Text>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
+    padding: 16,
+    borderRadius: borderRadius.sm,
     alignItems: 'center',
-    marginHorizontal: spacing.md,
     marginBottom: spacing.sm,
   },
-  locked: {
+  containerOpen: {
+    borderWidth: 1.5,
+  },
+  containerFuture: {
+    borderWidth: 1.5,
+  },
+  containerLocked: {
+    padding: 16,
+    borderRadius: borderRadius.sm,
+    alignItems: 'center',
     backgroundColor: colours.surface,
+    marginBottom: spacing.sm,
   },
   lockedText: {
     color: colours.textMuted,
-    fontWeight: '600',
+    fontWeight: '600' as const,
     fontSize: 14,
   },
   label: {
-    fontSize: 12,
-    fontWeight: '500',
-    textTransform: 'uppercase',
+    fontSize: 13,
+    fontWeight: '600' as const,
+    textTransform: 'uppercase' as const,
     letterSpacing: 0.5,
   },
   time: {
-    fontSize: 28,
-    fontWeight: '700',
-    marginTop: 4,
-  },
-  urgentHint: {
-    fontSize: 12,
-    color: colours.warning,
-    marginTop: 4,
-    fontWeight: '500',
+    fontSize: 18,
+    fontWeight: 'bold' as const,
+    marginTop: spacing.xs,
+    letterSpacing: -0.3,
   },
   compactText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '600' as const,
   },
 });
+
+export default Countdown;

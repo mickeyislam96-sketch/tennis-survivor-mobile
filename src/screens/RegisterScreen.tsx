@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
-import { colours, spacing, borderRadius, typography } from '../theme';
+import { colours, spacing, borderRadius } from '../theme';
 
 type RootStackParamList = {
   Login: undefined;
@@ -24,7 +24,7 @@ type RootStackParamList = {
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Register'>;
 
-export function RegisterScreen({ navigation }: Props) {
+export default function RegisterScreen({ navigation }: Props) {
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -58,10 +58,9 @@ export function RegisterScreen({ navigation }: Props) {
     try {
       setLoading(true);
       await register(email, displayName, password);
-      // Navigation will be handled by the auth flow logic in the main navigator
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Registration failed';
-      Alert.alert('Registration Error', errorMsg);
+      Alert.alert('Sign Up Error', errorMsg);
     } finally {
       setLoading(false);
     }
@@ -75,10 +74,9 @@ export function RegisterScreen({ navigation }: Props) {
       >
         <View style={styles.content}>
           <View style={styles.header}>
+            <Text style={styles.appName}>🎾 Final Serve-ivor</Text>
             <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>
-              Join the ultimate tennis survivor game
-            </Text>
+            <Text style={styles.subtitle}>Join the game</Text>
           </View>
 
           <View style={styles.form}>
@@ -113,7 +111,7 @@ export function RegisterScreen({ navigation }: Props) {
               <Text style={styles.label}>Password</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Min. 8 characters"
+                placeholder="Min 8 characters"
                 placeholderTextColor={colours.textMuted}
                 secureTextEntry
                 editable={!loading}
@@ -121,9 +119,7 @@ export function RegisterScreen({ navigation }: Props) {
                 onChangeText={setPassword}
               />
               {password.length > 0 && password.length < 8 && (
-                <Text style={styles.hint}>
-                  Must be at least 8 characters
-                </Text>
+                <Text style={styles.hint}>Min 8 characters</Text>
               )}
             </View>
 
@@ -138,10 +134,11 @@ export function RegisterScreen({ navigation }: Props) {
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
               />
+              {confirmPassword.length > 0 && password === confirmPassword && (
+                <Text style={styles.hintSuccess}>Passwords match</Text>
+              )}
               {confirmPassword.length > 0 && password !== confirmPassword && (
-                <Text style={styles.hint}>
-                  Passwords do not match
-                </Text>
+                <Text style={styles.hint}>Passwords do not match</Text>
               )}
             </View>
 
@@ -152,7 +149,7 @@ export function RegisterScreen({ navigation }: Props) {
               activeOpacity={0.7}
             >
               {loading ? (
-                <ActivityIndicator size="small" color={colours.text} />
+                <ActivityIndicator size="small" color={colours.white} />
               ) : (
                 <Text style={styles.buttonText}>Create Account</Text>
               )}
@@ -179,7 +176,7 @@ export function RegisterScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colours.background,
+    backgroundColor: colours.primary,
   },
   keyboardView: {
     flex: 1,
@@ -191,39 +188,58 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   header: {
-    marginTop: spacing.xl,
+    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.md,
+  },
+  appName: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: colours.white,
   },
   title: {
-    ...typography.h1,
-    marginBottom: spacing.sm,
+    fontSize: 28,
+    fontWeight: '800',
+    color: colours.white,
+    marginTop: spacing.md,
   },
   subtitle: {
-    ...typography.bodySmall,
-    color: colours.textSecondary,
+    fontSize: 15,
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginTop: spacing.xs,
   },
   form: {
-    marginVertical: spacing.lg,
+    backgroundColor: colours.surface,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
   },
   fieldContainer: {
     marginBottom: spacing.lg,
   },
   label: {
-    ...typography.label,
+    fontSize: 12,
+    fontWeight: '600',
+    color: colours.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
     marginBottom: spacing.sm,
   },
   input: {
-    backgroundColor: colours.surface,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colours.border,
     borderRadius: borderRadius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     color: colours.text,
-    fontSize: typography.body.fontSize,
+    fontSize: 15,
   },
   hint: {
-    ...typography.caption,
+    fontSize: 12,
     color: colours.warning,
+    marginTop: spacing.xs,
+  },
+  hintSuccess: {
+    fontSize: 12,
+    color: colours.success,
     marginTop: spacing.xs,
   },
   button: {
@@ -238,9 +254,9 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   buttonText: {
-    ...typography.body,
     fontWeight: '600',
-    color: colours.text,
+    fontSize: 16,
+    color: colours.white,
   },
   footer: {
     marginBottom: spacing.lg,
@@ -251,12 +267,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loginText: {
-    ...typography.body,
     color: colours.textSecondary,
+    fontSize: 14,
   },
   loginLink: {
-    ...typography.body,
-    color: colours.primaryLight,
+    color: colours.primary,
     fontWeight: '600',
+    fontSize: 14,
   },
 });
