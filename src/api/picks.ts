@@ -42,3 +42,11 @@ export function getPickHistory(groupId: string): Promise<Pick[]> {
     params: { groupId },
   });
 }
+
+/** Fetch another user's pick history (for leaderboard modal) */
+export function getUserPickHistory(userId: string, groupId: string): Promise<Pick[]> {
+  return apiCall<Pick[]>('/api/picks/history', {
+    params: { userId, groupId },
+    skipAuth: true,
+  });
+}

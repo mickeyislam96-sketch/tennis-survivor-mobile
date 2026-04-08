@@ -439,10 +439,23 @@ export function GroupScreen({ navigation, route }: Props) {
                     <Text style={styles.pickEyebrow}>YOUR {currentRound} PICK</Text>
                     <Text style={styles.pickPlayerName}>{currentPick.playerName}</Text>
                   </View>
-                  <Text style={styles.pickedLocked}>{'\uD83D\uDD12'}</Text>
+                  <TouchableOpacity
+                    style={[styles.changePickButton, { backgroundColor: colours.primaryDark }]}
+                    onPress={() => handleNavigate('Pick')}
+                  >
+                    <Text style={styles.changePickButtonText}>View picks</Text>
+                  </TouchableOpacity>
                 </View>
               </View>
-            ) : null}
+            ) : (
+              /* No pick + no open window — still show nav to picks */
+              <TouchableOpacity
+                style={[styles.makePickButton, { backgroundColor: colours.primaryDark }]}
+                onPress={() => handleNavigate('Pick')}
+              >
+                <Text style={styles.makePickButtonText}>View picks {'\u2192'}</Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
 

@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import {
   SafeAreaView,
   View,
@@ -10,17 +10,20 @@ import {
   Modal,
   Pressable,
   Dimensions,
+  ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
 import { usePollData } from '../hooks/usePollData';
 import { getLeaderboard, LeaderboardData, LeaderboardMember } from '../api/leaderboard';
 import { getGroup, Group } from '../api/groups';
+import { getUserPickHistory, Pick as PickType } from '../api/picks';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 import EmptyState from '../components/EmptyState';
 import { colours, spacing, borderRadius, shadows, AVATAR_COLOURS } from '../theme';
-import { ROUND_LABELS } from '../utils/constants';
+import { ROUND_LABELS, ROUND_ORDER } from '../utils/constants';
 
 type RootStackParamList = {
   Leaderboard: { groupId: string };
@@ -192,6 +195,7 @@ export function LeaderboardScreen({ route }: Props) {
           member={selectedMember}
           roundIsLocked={leaderboardData.roundIsLocked}
           currentRound={leaderboardData.currentRound}
+          groupId={groupId}
           onClose={() => setSelectedMember(null)}
         />
       )}
@@ -293,10 +297,11 @@ interface MemberModalProps {
   member: LeaderboardMember;
   roundIsLocked: boolean;
   currentRound: string;
+  groupId: string;
   onClose: () => void;
 }
 
-function MemberModal({ member, roundIsLocked, currentRound, onClose }: MemberModalProps) {
+function MemberModal({ member, roundIsLocked, currentRound, onClose, groupId }: MemberModalProps) {
   const initials = member.displayName
     .split(' ')
     .map((n) => n[0])
@@ -304,10 +309,32 @@ function MemberModal({ member, roundIsLocked, currentRound, onClose }: MemberMod
     .toUpperCase()
     .slice(0, 2);
 
+  // Fetch full pick history for this member
+  const [pickHistory, setPickHistory] = useState<PickType[] | null>(null);
+  const [historyError, setHistoryError] = useState(false);
+
+  useEffect(() => {
+    if (!member.userId || !groupId) return;
+    getUserPickHistory(member.userId, groupId)
+      .then((picks) => {
+        const sorted = (picks || []).sort((a, b) => {
+          const iA = ROUND_ORDER.indexOf(a.round as any);
+          const iB = ROUND_ORDER.indexOf(b.round as any);
+          return iA - iB;
+        });
+        setPickHistory(sorted);
+      })
+      .catch(() => { setHistoryError(true); setPickHistory([]); });
+  }, [member.userId, groupId]);
+
+  // Filter out current open round picks (hidden until locked)
+  const visiblePicks = pickHistory?.filter((p) => p.round !== currentRound || roundIsLocked) || [];
+
   return (
     <Modal transparent visible animationType="slide" onRequestClose={onClose}>
       <Pressable style={styles.modalOverlay} onPress={onClose}>
         <Pressable style={styles.modalSheet} onPress={(e) => e.stopPropagation()}>
+          <ScrollView showsVerticalScrollIndicator={false}>
           {/* Handle */}
           <View style={styles.modalHandle} />
 
@@ -320,39 +347,62 @@ function MemberModal({ member, roundIsLocked, currentRound, onClose }: MemberMod
               <Text style={styles.modalName}>{member.displayName}</Text>
               <Text style={[styles.modalStatus, { color: member.isAlive ? colours.success : colours.textMuted }]}>
                 {member.isAlive
-                  ? `Alive \u00B7 ${member.survivedRounds} rounds survived`
-                  : `Eliminated in ${member.eliminatedRound || '?'} \u00B7 ${member.survivedRounds} rounds survived`
+                  ? `Still in \u00B7 ${member.survivedRounds} round${member.survivedRounds === 1 ? '' : 's'} survived`
+                  : `Eliminated in ${ROUND_LABELS[member.eliminatedRound || ''] || member.eliminatedRound || '?'}`
                 }
               </Text>
             </View>
           </View>
 
-          {/* Current round pick */}
+          {/* Pick History Table */}
           <View style={styles.modalSection}>
-            <Text style={styles.modalSectionTitle}>
-              {ROUND_LABELS[currentRound] || currentRound} Pick
-            </Text>
-            {!roundIsLocked ? (
-              <View style={styles.modalPickHidden}>
-                <Text style={styles.modalPickHiddenText}>
-                  {'\uD83D\uDD12'} Picks are hidden until the round is locked
-                </Text>
+            <Text style={styles.modalSectionTitle}>Pick history</Text>
+
+            {pickHistory === null && !historyError && (
+              <ActivityIndicator color={colours.primary} style={{ marginVertical: spacing.md }} />
+            )}
+
+            {historyError && (
+              <Text style={styles.modalNoPick}>Could not load picks.</Text>
+            )}
+
+            {pickHistory !== null && !historyError && visiblePicks.length === 0 && (
+              <Text style={styles.modalNoPick}>No picks submitted yet.</Text>
+            )}
+
+            {visiblePicks.length > 0 && (
+              <View style={styles.historyTable}>
+                {/* Table header */}
+                <View style={styles.historyHeaderRow}>
+                  <Text style={[styles.historyHeaderCell, { flex: 1 }]}>Round</Text>
+                  <Text style={[styles.historyHeaderCell, { flex: 2 }]}>Player</Text>
+                  <Text style={[styles.historyHeaderCell, { flex: 1, textAlign: 'right' }]}>Result</Text>
+                </View>
+                {visiblePicks.map((p) => (
+                  <View
+                    key={p.id || p.round}
+                    style={[styles.historyRow, p.survived === false && styles.historyRowOut]}
+                  >
+                    <Text style={[styles.historyCell, { flex: 1 }]}>
+                      {ROUND_LABELS[p.round] || p.round}
+                    </Text>
+                    <Text style={[styles.historyCell, styles.historyCellPlayer, { flex: 2 }]} numberOfLines={1}>
+                      {p.playerName || '\u2014'}
+                    </Text>
+                    <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                      {p.survived === true && (
+                        <Text style={[styles.historyResult, { color: colours.success }]}>{'\u2713'} Survived</Text>
+                      )}
+                      {p.survived === false && (
+                        <Text style={[styles.historyResult, { color: colours.danger }]}>{'\u2717'} Out</Text>
+                      )}
+                      {p.survived == null && (
+                        <Text style={[styles.historyResult, { color: colours.textMuted }]}>Pending</Text>
+                      )}
+                    </View>
+                  </View>
+                ))}
               </View>
-            ) : member.currentRoundPick ? (
-              <View style={[
-                styles.modalPickCard,
-                { borderLeftColor: member.isAlive ? colours.success : colours.danger },
-              ]}>
-                <Text style={styles.modalPickName}>{member.currentRoundPick}</Text>
-                <Text style={[
-                  styles.modalPickResult,
-                  { color: member.isAlive ? colours.success : colours.danger },
-                ]}>
-                  {member.isAlive ? '\u2713 Survived' : '\u2717 Eliminated'}
-                </Text>
-              </View>
-            ) : (
-              <Text style={styles.modalNoPick}>No pick submitted</Text>
             )}
           </View>
 
@@ -382,6 +432,7 @@ function MemberModal({ member, roundIsLocked, currentRound, onClose }: MemberMod
           <TouchableOpacity style={styles.modalClose} onPress={onClose}>
             <Text style={styles.modalCloseText}>Close</Text>
           </TouchableOpacity>
+          </ScrollView>
         </Pressable>
       </Pressable>
     </Modal>
@@ -749,6 +800,53 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: colours.textMuted,
   },
+  // Pick history table
+  historyTable: {
+    borderWidth: 1,
+    borderColor: colours.border,
+    borderRadius: borderRadius.sm,
+    overflow: 'hidden',
+  },
+  historyHeaderRow: {
+    flexDirection: 'row',
+    backgroundColor: colours.gray50,
+    paddingVertical: 8,
+    paddingHorizontal: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colours.border,
+  },
+  historyHeaderCell: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: colours.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  historyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colours.border,
+  },
+  historyRowOut: {
+    backgroundColor: colours.red50,
+  },
+  historyCell: {
+    fontSize: 12,
+    color: colours.textMuted,
+    fontWeight: '500',
+  },
+  historyCellPlayer: {
+    color: colours.text,
+    fontWeight: '600',
+  },
+  historyResult: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+
   modalClose: {
     backgroundColor: colours.gray100,
     borderRadius: borderRadius.sm,

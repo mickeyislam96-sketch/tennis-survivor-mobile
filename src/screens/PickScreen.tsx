@@ -17,8 +17,8 @@ import * as Haptics from 'expo-haptics';
 import { colours, spacing, borderRadius, shadows } from '../theme';
 import { getAvailablePlayers, submitPick, getPickHistory } from '../api/picks';
 import type { Player as ApiPlayer, Pick as ApiPick } from '../api/picks';
-import { getDeadlines, getRounds } from '../api/draw';
-import type { Deadline as ApiDeadline } from '../api/draw';
+import { getDeadlines, getRounds, getBracket } from '../api/draw';
+import type { Deadline as ApiDeadline, DrawMatch } from '../api/draw';
 import { getGroup } from '../api/groups';
 import type { GroupMember } from '../api/groups';
 import { useAuth } from '../context/AuthContext';
@@ -63,6 +63,41 @@ export default function PickScreen({ route }: Props) {
   const isNotYetOpen = !isLocked && !isOpen;
 
   const survivedCount = allPicks.filter((p) => p.survived === true).length;
+
+  // Match detail for locked pick (opponent + status)
+  const [pickMatchDetail, setPickMatchDetail] = useState<DrawMatch | null>(null);
+
+  useEffect(() => {
+    if (!isLocked || !myPickThisRound) { setPickMatchDetail(null); return; }
+    getBracket()
+      .then((data) => {
+        if (!data?.matches) return;
+        const match = data.matches.find(
+          (m: DrawMatch) =>
+            m.round === currentRound &&
+            (m.player1Id === myPickThisRound.playerId || m.player2Id === myPickThisRound.playerId)
+        );
+        setPickMatchDetail(match || null);
+      })
+      .catch(() => setPickMatchDetail(null));
+  }, [isLocked, myPickThisRound, currentRound]);
+
+  // Compute opponent + status from match detail
+  const pickOpponent = pickMatchDetail
+    ? (pickMatchDetail.player1Id === myPickThisRound?.playerId
+        ? pickMatchDetail.player2Name
+        : pickMatchDetail.player1Name)
+    : null;
+  const matchStatusRaw = (pickMatchDetail?.status || '').toLowerCase();
+  const isLiveMatch = matchStatusRaw === 'in_progress' || matchStatusRaw === '1' || matchStatusRaw === '2'
+    || matchStatusRaw === '3' || matchStatusRaw.startsWith('set');
+  const matchStatusText = myPickThisRound?.survived === true ? 'Advanced \u2713'
+    : myPickThisRound?.survived === false ? 'Eliminated \u2717'
+    : isLiveMatch ? '\u25CF Live now'
+    : matchStatusRaw === 'completed' ? 'Match complete'
+    : pickMatchDetail?.startTime
+      ? `Scheduled ${new Date(pickMatchDetail.startTime).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`
+    : null;
 
   // Previous round pending banner
   const prevRoundIndex = rounds.indexOf(currentRound) - 1;
@@ -390,16 +425,20 @@ export default function PickScreen({ route }: Props) {
             {myPickThisRound.survived === true ? '\u2713' : myPickThisRound.survived === false ? '\u2717' : '\uD83D\uDD12'}
           </Text>
           <View style={styles.pickContent}>
-            <Text style={styles.pickLabel}>YOUR {currentRound} PICK \u2014 LOCKED</Text>
+            <Text style={styles.pickLabel}>YOUR {currentRound} PICK {'\u2014'} LOCKED</Text>
             <Text style={styles.pickPlayer}>{myPickThisRound.playerName}</Text>
-            {myPickThisRound.survived === true && (
-              <Badge label="Advanced \u2713" variant="success" />
+            {pickOpponent && (
+              <Text style={styles.pickOpponent}>vs {pickOpponent}</Text>
             )}
-            {myPickThisRound.survived === false && (
-              <Badge label="Eliminated \u2717" variant="danger" />
-            )}
-            {myPickThisRound.survived === null && (
-              <Badge label="Match pending" variant="muted" />
+            {matchStatusText && (
+              <Text style={[
+                styles.pickMatchStatus,
+                isLiveMatch && styles.pickMatchStatusLive,
+                myPickThisRound.survived === true && { color: colours.success },
+                myPickThisRound.survived === false && { color: colours.danger },
+              ]}>
+                {matchStatusText}
+              </Text>
             )}
           </View>
         </View>
@@ -440,8 +479,22 @@ export default function PickScreen({ route }: Props) {
         </View>
       )}
 
+      {/* Eliminated blocking card */}
+      {isOpen && member && !member.isAlive && (
+        <View style={styles.eliminatedCard}>
+          <Text style={styles.eliminatedIcon}>{'\uD83C\uDFBE'}</Text>
+          <Text style={styles.eliminatedTitle}>You're out of this one</Text>
+          <Text style={styles.eliminatedSub}>
+            Your pick in {member.eliminatedRound || 'a previous round'} didn't make it through, so you're eliminated from this pool.
+          </Text>
+          <Text style={styles.eliminatedHint}>
+            You can still follow the action on the draw and leaderboard.
+          </Text>
+        </View>
+      )}
+
       {/* Bracket hint link */}
-      {isOpen && (
+      {isOpen && (!member || member.isAlive) && (
         <TouchableOpacity
           style={styles.bracketHint}
           onPress={() => navigation.navigate('Draw', { groupId })}
@@ -453,8 +506,8 @@ export default function PickScreen({ route }: Props) {
         </TouchableOpacity>
       )}
 
-      {/* Search and player list (only when open) */}
-      {isOpen && (
+      {/* Search and player list (only when open and alive) */}
+      {isOpen && (!member || member.isAlive) && (
         <>
           <TextInput
             style={styles.searchInput}
@@ -760,6 +813,20 @@ const styles = StyleSheet.create({
     color: colours.textMuted,
     marginTop: 4,
   },
+  pickOpponent: {
+    fontSize: 13,
+    color: colours.textMuted,
+    marginTop: 2,
+  },
+  pickMatchStatus: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colours.textMuted,
+    marginTop: 4,
+  },
+  pickMatchStatusLive: {
+    color: '#ef4444',
+  },
 
   // Confirm button
   confirmButton: {
@@ -859,6 +926,41 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colours.blue700,
     lineHeight: 18,
+  },
+
+  // Eliminated card
+  eliminatedCard: {
+    backgroundColor: colours.surfaceAlt,
+    borderWidth: 1.5,
+    borderColor: colours.border,
+    borderRadius: borderRadius.md,
+    padding: spacing.lg,
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  eliminatedIcon: {
+    fontSize: 36,
+    marginBottom: spacing.sm,
+  },
+  eliminatedTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colours.text,
+    marginBottom: spacing.sm,
+    textAlign: 'center',
+  },
+  eliminatedSub: {
+    fontSize: 14,
+    color: colours.textMuted,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: spacing.sm,
+  },
+  eliminatedHint: {
+    fontSize: 13,
+    color: colours.primary,
+    fontWeight: '500',
+    textAlign: 'center',
   },
 
   // Bracket hint
