@@ -132,6 +132,17 @@ export function GroupScreen({ navigation, route }: Props) {
   const entryFee = group?.entryFeeCents ? group.entryFeeCents / 100 : 0;
   const isUpcoming = tournamentStatus === 'upcoming';
 
+  // Entry closed detection: entry closes 1h before R1 lock (matches web logic)
+  const isEntryClosed = useMemo(() => {
+    if (!deadlines) return false;
+    const r1Deadline = deadlines.find((d) => d.round === 'R1');
+    if (!r1Deadline?.lockAt) {
+      return group?.tournament?.entryOpen === false;
+    }
+    const entryDeadline = new Date(new Date(r1Deadline.lockAt).getTime() - 60 * 60 * 1000);
+    return group?.tournament?.entryOpen === false || new Date() >= entryDeadline;
+  }, [deadlines, group]);
+
   // Countdown for urgency banner
   const deadlineCountdown = useCountdown(nextDeadline?.lockAt || '');
 
@@ -247,13 +258,8 @@ export function GroupScreen({ navigation, route }: Props) {
           ) : (
             <View style={styles.statsRow}>
               <View style={styles.statItem}>
-                <Text style={styles.statValue}>{totalMembers}</Text>
-                <Text style={styles.statLabel}>Players</Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <Text style={styles.statValue}>{aliveCount}</Text>
-                <Text style={styles.statLabel}>Alive</Text>
+                <Text style={styles.statValue}>{aliveCount} / {totalMembers}</Text>
+                <Text style={styles.statLabel}>Still In</Text>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
@@ -351,10 +357,14 @@ export function GroupScreen({ navigation, route }: Props) {
                 ]}
               />
             </View>
-            <View style={styles.trackLabels}>
-              <Text style={styles.trackLabelText}>0% eliminated</Text>
-              <Text style={styles.trackLabelText}>100%</Text>
-            </View>
+            <Text style={styles.meterCaption}>
+              {Math.round(eliminationPercentage)}% of the field eliminated
+            </Text>
+            {aliveCount > 1 && (
+              <Text style={styles.meterSubCaption}>
+                Last one standing wins the prize pool
+              </Text>
+            )}
           </View>
         )}
 
@@ -476,19 +486,39 @@ export function GroupScreen({ navigation, route }: Props) {
           </View>
         )}
 
-        {/* Join Button */}
+        {/* Join Button / Entry Closed */}
         {!isMember && (
           <View style={styles.joinSection}>
-            <TouchableOpacity
-              style={[styles.joinButton, shadows.greenLg]}
-              onPress={handleJoinGroup}
-            >
-              <Text style={styles.joinButtonText}>
-                {entryFee > 0 ? `Join \u00B7 \u00A3${entryFee.toFixed(0)} \u2192` : 'Join free \u2192'}
-              </Text>
-            </TouchableOpacity>
-            {!user && (
-              <Text style={styles.joinHint}>You{'\u2019'}ll create a free account to join</Text>
+            {isEntryClosed ? (
+              <>
+                <View style={styles.entryClosedCard}>
+                  <Text style={styles.entryClosedIcon}>{'\uD83C\uDFBE'}</Text>
+                  <Text style={styles.entryClosedTitle}>Entry period is over</Text>
+                  <Text style={styles.entryClosedSub}>
+                    {group.name} is already underway {'\u2014'} new entries are no longer accepted.
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={[styles.joinButton, { backgroundColor: colours.primaryDark }]}
+                  onPress={() => handleNavigate('Leaderboard')}
+                >
+                  <Text style={styles.joinButtonText}>View leaderboard {'\u2192'}</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <TouchableOpacity
+                  style={[styles.joinButton, shadows.greenLg]}
+                  onPress={handleJoinGroup}
+                >
+                  <Text style={styles.joinButtonText}>
+                    {entryFee > 0 ? `Join \u00B7 \u00A3${entryFee.toFixed(0)} \u2192` : 'Join free \u2192'}
+                  </Text>
+                </TouchableOpacity>
+                {!user && (
+                  <Text style={styles.joinHint}>You{'\u2019'}ll create a free account to join</Text>
+                )}
+              </>
             )}
           </View>
         )}
@@ -728,14 +758,18 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: borderRadius.xs,
   },
-  trackLabels: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 4,
+  meterCaption: {
+    fontSize: 12,
+    color: colours.textMuted,
+    textAlign: 'center',
+    marginTop: spacing.sm,
   },
-  trackLabelText: {
+  meterSubCaption: {
     fontSize: 11,
     color: colours.textMuted,
+    textAlign: 'center',
+    marginTop: 2,
+    fontStyle: 'italic',
   },
 
   /* Deadline Section */
@@ -1023,6 +1057,32 @@ const styles = StyleSheet.create({
     color: colours.textMuted,
     marginTop: spacing.sm,
     textAlign: 'center',
+  },
+  entryClosedCard: {
+    backgroundColor: colours.surfaceAlt,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colours.border,
+    padding: spacing.lg,
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  entryClosedIcon: {
+    fontSize: 28,
+    marginBottom: spacing.sm,
+  },
+  entryClosedTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colours.text,
+    marginBottom: spacing.xs,
+    textAlign: 'center',
+  },
+  entryClosedSub: {
+    fontSize: 13,
+    color: colours.textMuted,
+    textAlign: 'center',
+    lineHeight: 18,
   },
 
   /* Footer */

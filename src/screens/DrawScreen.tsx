@@ -362,6 +362,13 @@ export function DrawScreen() {
         scrollEnabled={true}
       />
 
+      {/* Auto-update footer */}
+      <View style={styles.autoUpdateFooter}>
+        <Text style={styles.autoUpdateText}>
+          Results update automatically as matches complete.
+        </Text>
+      </View>
+
       {/* Match Detail Modal */}
       {selectedMatch && (
         <MatchDetailModal
@@ -764,6 +771,18 @@ const styles = StyleSheet.create({
     fontWeight: '500' as const,
     color: colours.blue700,
     lineHeight: 18,
+  },
+
+  // Auto-update footer
+  autoUpdateFooter: {
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    alignItems: 'center',
+  },
+  autoUpdateText: {
+    fontSize: 12,
+    color: colours.textMuted,
+    fontStyle: 'italic',
   },
 
   // ── MODAL ──────────────────────────────────────────────────────────────────

@@ -95,7 +95,7 @@ const PoolCard: React.FC<PoolCardProps> = ({ pool, onPress }) => {
 
         {isActive && !allEliminated && (
           <Text style={[styles.infoLine, { color: colours.success }]}>
-            {'\u2713'} {pool.aliveCount || 0} alive
+            {pool.aliveCount || 0} of {pool.memberCount || 0} still in
           </Text>
         )}
 

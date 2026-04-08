@@ -156,7 +156,7 @@ export function LeaderboardScreen({ route }: Props) {
               <Text style={[styles.headerCell, { width: 28 }]}>#</Text>
               <Text style={[styles.headerCell, { flex: 1 }]}>Player</Text>
               <Text style={[styles.headerCell, { width: 60, textAlign: 'center' }]}>Status</Text>
-              <Text style={[styles.headerCell, { width: 55, textAlign: 'center' }]}>Rounds</Text>
+              <Text style={[styles.headerCell, { width: 65, textAlign: 'center' }]}>Progress</Text>
               <Text style={[styles.headerCell, { width: 75, textAlign: 'center' }]}>
                 {ROUND_LABELS[leaderboardData.currentRound] || leaderboardData.currentRound} Pick
               </Text>
@@ -259,9 +259,13 @@ function LeaderboardRow({
       <View style={styles.survivedCell}>
         <Text style={[
           styles.survivedValue,
-          { color: member.isAlive ? colours.primaryDark : colours.text }
-        ]}>
-          {member.survivedRounds}
+          { color: member.isAlive ? colours.primaryDark : colours.textMuted }
+        ]} numberOfLines={2}>
+          {member.survivedRounds === 0
+            ? 'No results'
+            : member.isAlive
+              ? `${member.survivedRounds} survived`
+              : `Out ${member.eliminatedRound || ''}`}
         </Text>
       </View>
 
@@ -599,12 +603,14 @@ const styles = StyleSheet.create({
     color: colours.textMuted,
   },
   survivedCell: {
-    width: 55,
+    width: 65,
     alignItems: 'center',
   },
   survivedValue: {
-    fontSize: 13,
+    fontSize: 10.5,
     fontWeight: '600',
+    textAlign: 'center',
+    lineHeight: 13,
   },
   pickCell: {
     width: 75,

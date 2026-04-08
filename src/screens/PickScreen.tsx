@@ -29,12 +29,15 @@ import Badge from '../components/Badge';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 import type { PoolsStackParamList } from '../navigation/PoolsStack';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 type Props = NativeStackScreenProps<PoolsStackParamList, 'Pick'>;
 
 export default function PickScreen({ route }: Props) {
   const { groupId } = route.params;
   const { user } = useAuth();
+  const navigation = useNavigation<NativeStackNavigationProp<PoolsStackParamList>>();
 
   // State
   const [available, setAvailable] = useState<ApiPlayer[]>([]);
@@ -429,6 +432,19 @@ export default function PickScreen({ route }: Props) {
             )}
           </TouchableOpacity>
         </View>
+      )}
+
+      {/* Bracket hint link */}
+      {isOpen && (
+        <TouchableOpacity
+          style={styles.bracketHint}
+          onPress={() => navigation.navigate('Draw', { groupId })}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.bracketHintText}>
+            Tap a matchup in the bracket to compare players before you pick {'\u2192'}
+          </Text>
+        </TouchableOpacity>
       )}
 
       {/* Search and player list (only when open) */}
@@ -836,6 +852,22 @@ const styles = StyleSheet.create({
   overlapTipText: {
     fontSize: 13,
     color: colours.blue700,
+    lineHeight: 18,
+  },
+
+  // Bracket hint
+  bracketHint: {
+    backgroundColor: colours.primaryLight,
+    borderWidth: 1,
+    borderColor: colours.successBorder,
+    borderRadius: borderRadius.sm,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  bracketHintText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: colours.primaryDark,
     lineHeight: 18,
   },
 
