@@ -28,7 +28,7 @@ const PoolCard: React.FC<PoolCardProps> = ({ pool, onPress }) => {
   const getBadge = () => {
     if (isCompleted) return <Badge label="Completed" variant="muted" size="sm" />;
     if (allEliminated) return <Badge label="Closed" variant="muted" size="sm" />;
-    if (isActive) return <Badge label="Active" variant="success" size="sm" />;
+    if (isActive) return <Badge label="Live" variant="success" size="sm" />;
     if (isUpcoming) return <Badge label="Coming Soon" variant="info" size="sm" />;
     return null;
   };

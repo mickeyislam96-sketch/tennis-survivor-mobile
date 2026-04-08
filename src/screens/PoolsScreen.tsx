@@ -49,11 +49,24 @@ export function PoolsScreen({ navigation }: Props) {
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
 
-  // Find the featured upcoming pool for hero CTA
+  // Find the featured pool for hero CTA — prefer active, then upcoming
   const featuredPool = useMemo(() => {
     if (!pools) return null;
+    const active = pools.find((p) => (p.tournament?.status || p.status) === 'active');
+    if (active) return active;
     return pools.find((p) => (p.tournament?.status || p.status) === 'upcoming') || null;
   }, [pools]);
+
+  const featuredIsActive = useMemo(() => {
+    if (!featuredPool) return false;
+    return (featuredPool.tournament?.status || featuredPool.status) === 'active';
+  }, [featuredPool]);
+
+  // Check if user is already a member of the featured pool
+  const isFeaturedMember = useMemo(() => {
+    if (!featuredPool || !user) return false;
+    return featuredPool.isMember ?? false;
+  }, [featuredPool, user]);
 
   // Countdown to featured pool start date
   const featuredStartDate = featuredPool?.tournament?.startDate || featuredPool?.startDate || null;
@@ -126,8 +139,8 @@ export function PoolsScreen({ navigation }: Props) {
     }
 
     const result: { title: string; data: Pool[] }[] = [];
-    if (active.length > 0) result.push({ title: 'Active Pools', data: active });
-    if (upcoming.length > 0) result.push({ title: 'Upcoming', data: upcoming });
+    if (active.length > 0) result.push({ title: 'Open now', data: active });
+    if (upcoming.length > 0) result.push({ title: 'Coming soon', data: upcoming });
     if (completed.length > 0) result.push({ title: 'Past Pools', data: completed });
 
     return result;
@@ -169,13 +182,15 @@ export function PoolsScreen({ navigation }: Props) {
                   activeOpacity={0.8}
                 >
                   <Text style={styles.heroCtaText}>
-                    Enter {featuredPoolName} free {'\u2192'}
+                    {featuredIsActive || isFeaturedMember
+                      ? `Go to ${featuredPoolName} \u2192`
+                      : `Enter ${featuredPoolName} free \u2192`}
                   </Text>
                 </TouchableOpacity>
               )}
 
-              {/* Countdown badge */}
-              {featuredPool && !countdownExpired && (
+              {/* Countdown badge - only for upcoming */}
+              {featuredPool && !featuredIsActive && !countdownExpired && (
                 <View style={styles.heroCountdownBadge}>
                   <Text style={styles.heroCountdownText}>
                     {'\uD83C\uDFBE'} {featuredPoolName} starts in {countdownDisplay}
@@ -232,7 +247,7 @@ export function PoolsScreen({ navigation }: Props) {
         )}
         renderSectionFooter={({ section }) => {
           // Show social proof banner after upcoming pools section
-          if (section.title === 'Upcoming' && upcomingRegisteredCount > 0) {
+          if (section.title === 'Coming soon' && upcomingRegisteredCount > 0) {
             return (
               <View style={styles.socialProof}>
                 <Text style={styles.socialProofText}>

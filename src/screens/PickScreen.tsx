@@ -320,6 +320,18 @@ export default function PickScreen({ route }: Props) {
         </View>
       )}
 
+      {/* Round overlap tip: some previous round matches still in play */}
+      {isOpen && prevRound && available.some((p) => p.pendingPrevRound) && (
+        <View style={styles.overlapTip}>
+          <Text style={styles.overlapTipTitle}>
+            No rush {'\u2014'} {ROUND_LABELS[prevRound] || prevRound} matches still in play
+          </Text>
+          <Text style={styles.overlapTipText}>
+            Some {prevRound} results aren{'\u2019'}t in yet, so not all {ROUND_LABELS[currentRound] || currentRound} matchups are confirmed. You can wait until today{'\u2019'}s play finishes before committing to your pick.
+          </Text>
+        </View>
+      )}
+
       {/* Previous round pending banner */}
       {showPrevPickPending && (
         <View
@@ -459,6 +471,16 @@ export default function PickScreen({ route }: Props) {
             keyExtractor={(p) => p.id}
             scrollEnabled={false}
           />
+
+          {/* Disclaimers */}
+          {available.some((p) => p.pendingPrevRound) && (
+            <Text style={styles.disclaimer}>
+              Some players are still in {prevRound}. Players marked may be eliminated before {ROUND_LABELS[currentRound] || currentRound} begins. If you pick one and they lose, your pick is invalid.
+            </Text>
+          )}
+          <Text style={styles.disclaimer}>
+            Qualifiers will be added once the qualifying draw is finalised.
+          </Text>
         </>
       )}
 
@@ -794,6 +816,36 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colours.danger,
     fontWeight: '500',
+  },
+
+  // Overlap tip
+  overlapTip: {
+    backgroundColor: colours.blue50,
+    borderWidth: 1,
+    borderColor: colours.blue200,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  overlapTipTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colours.blue800,
+    marginBottom: 4,
+  },
+  overlapTipText: {
+    fontSize: 13,
+    color: colours.blue700,
+    lineHeight: 18,
+  },
+
+  // Disclaimer
+  disclaimer: {
+    fontSize: 12,
+    color: colours.textMuted,
+    lineHeight: 17,
+    marginTop: spacing.sm,
+    paddingHorizontal: spacing.md,
   },
 
   spacer: {

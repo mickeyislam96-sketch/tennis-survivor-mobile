@@ -53,14 +53,16 @@ const PlayerRow: React.FC<PlayerRowProps> = ({
             </View>
           )}
         </View>
+        {player.opponent && (
+          <Text style={styles.opponentText}>vs {player.opponent}</Text>
+        )}
         {isPending && (
-          <View style={styles.pendingBadgeWrapper}>
-            <Badge
-              label={`⚠️ ${pendingRound} result pending`}
-              variant="warning"
-              size="sm"
-            />
-          </View>
+          <Text style={styles.pendingText}>
+            Still in {pendingRound} {'\u2014'} if they lose, your pick is invalid
+          </Text>
+        )}
+        {isUsed && !isCurrentPick && (
+          <Text style={styles.usedText}>Already used</Text>
         )}
       </View>
 
@@ -129,8 +131,22 @@ const styles = StyleSheet.create({
     color: '#15803d',
     fontSize: 13,
   },
-  pendingBadgeWrapper: {
-    marginTop: spacing.xs,
+  opponentText: {
+    fontSize: 12,
+    color: colours.textMuted,
+    marginTop: 2,
+  },
+  pendingText: {
+    fontSize: 12,
+    color: colours.warning,
+    fontWeight: '500' as const,
+    marginTop: 2,
+  },
+  usedText: {
+    fontSize: 12,
+    color: colours.textMuted,
+    fontStyle: 'italic' as const,
+    marginTop: 2,
   },
   right: {
     justifyContent: 'flex-end',

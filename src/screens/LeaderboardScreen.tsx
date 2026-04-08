@@ -149,7 +149,7 @@ export function LeaderboardScreen({ route }: Props) {
             </View>
 
             {/* Hint */}
-            <Text style={styles.tapHint}>Tap any player to see details</Text>
+            <Text style={styles.tapHint}>Tap any player to see their picks</Text>
 
             {/* Table Header */}
             <View style={styles.tableHeader}>

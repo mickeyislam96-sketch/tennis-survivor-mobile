@@ -18,6 +18,7 @@ import { getGroup, Group, joinGroup } from '../api/groups';
 import { getDeadlines, Deadline } from '../api/draw';
 import { getPickHistory, Pick } from '../api/picks';
 import Countdown from '../components/Countdown';
+import { useCountdown } from '../hooks/useCountdown';
 import { schedulePickReminder, scheduleLastChanceReminder, cancelAllReminders } from '../services/notifications';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
@@ -130,6 +131,9 @@ export function GroupScreen({ navigation, route }: Props) {
   const prizePool = group?.prizePoolCents ? group.prizePoolCents / 100 : 0;
   const entryFee = group?.entryFeeCents ? group.entryFeeCents / 100 : 0;
   const isUpcoming = tournamentStatus === 'upcoming';
+
+  // Countdown for urgency banner
+  const deadlineCountdown = useCountdown(nextDeadline?.lockAt || '');
 
   const handleJoinGroup = useCallback(async () => {
     if (!user) return;
@@ -276,12 +280,12 @@ export function GroupScreen({ navigation, route }: Props) {
           >
             <Text style={styles.urgencyIcon}>{'\u26A0\uFE0F'}</Text>
             <View style={styles.urgencyContent}>
-              <Text style={styles.urgencyTitle}>Pick deadline approaching</Text>
+              <Text style={styles.urgencyTitle}>Deadline closing soon!</Text>
               <Text style={styles.urgencySubtitle}>
-                Make your {currentRound} pick before time runs out
+                {deadlineCountdown.display} left to pick for {currentRound}.
               </Text>
             </View>
-            <Text style={styles.urgencyArrow}>{'\u2192'}</Text>
+            <Text style={styles.urgencyArrow}>Pick now {'\u2192'}</Text>
           </TouchableOpacity>
         )}
 
@@ -383,15 +387,29 @@ export function GroupScreen({ navigation, route }: Props) {
                     <Text style={styles.changePickButtonText}>Change</Text>
                   </TouchableOpacity>
                 </View>
+                {/* Pick window time display */}
+                {nextDeadline && (
+                  <Text style={styles.pickWindowHint}>
+                    {formatPickWindow(nextDeadline)}
+                  </Text>
+                )}
               </View>
             ) : !currentPick && nextDeadline?.isOpen ? (
               /* No pick yet - show big green button */
-              <TouchableOpacity
-                style={[styles.makePickButton, shadows.greenLg]}
-                onPress={() => handleNavigate('Pick')}
-              >
-                <Text style={styles.makePickButtonText}>Make Your Pick</Text>
-              </TouchableOpacity>
+              <>
+                <TouchableOpacity
+                  style={[styles.makePickButton, shadows.greenLg]}
+                  onPress={() => handleNavigate('Pick')}
+                >
+                  <Text style={styles.makePickButtonText}>Make Your Pick</Text>
+                </TouchableOpacity>
+                {/* Pick window time display */}
+                {nextDeadline && (
+                  <Text style={styles.pickWindowHintCentre}>
+                    {formatPickWindow(nextDeadline)}
+                  </Text>
+                )}
+              </>
             ) : (
               /* Pick locked - show pick locked state */
               nextDeadline && !nextDeadline.isOpen && currentPick && (
@@ -516,6 +534,33 @@ function NavCard({
       <Text style={styles.navDescription}>{description}</Text>
     </TouchableOpacity>
   );
+}
+
+/**
+ * Format a pick window date like "7 Apr, 17:00"
+ */
+function fmtWindowDate(isoStr?: string | null): string {
+  if (!isoStr) return '';
+  try {
+    const d = new Date(isoStr);
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+      + ', '
+      + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Format pick window display: "Window 7 Apr, 17:00 → 9 Apr, 10:00"
+ */
+function formatPickWindow(deadline: { opensAt?: string | null; lockAt?: string | null }): string {
+  const parts: string[] = [];
+  if (deadline.opensAt) parts.push(fmtWindowDate(deadline.opensAt));
+  if (deadline.lockAt) parts.push(fmtWindowDate(deadline.lockAt));
+  if (parts.length === 2) return `Window ${parts[0]} \u2192 ${parts[1]}`;
+  if (parts.length === 1) return `Closes ${parts[0]}`;
+  return '';
 }
 
 /**
@@ -882,9 +927,20 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   urgencyArrow: {
-    fontSize: 18,
+    fontSize: 13,
     color: '#92400e',
     fontWeight: '700',
+  },
+  pickWindowHint: {
+    fontSize: 12,
+    color: colours.textMuted,
+    marginTop: spacing.sm,
+  },
+  pickWindowHintCentre: {
+    fontSize: 12,
+    color: colours.textMuted,
+    marginTop: spacing.sm,
+    textAlign: 'center',
   },
 
   /* Pre-launch Timeline */
