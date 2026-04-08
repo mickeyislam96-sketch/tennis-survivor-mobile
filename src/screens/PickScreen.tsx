@@ -124,13 +124,19 @@ export default function PickScreen({ route }: Props) {
           setMember(me);
         }
 
-        // Auto-navigate to first open round
+        // Auto-navigate to first open round, or latest locked round if none open
         if (deadlinesData.length > 0) {
           for (const d of deadlinesData) {
             if (d.isOpen && !d.isLocked) {
               setCurrentRound(d.round);
               return;
             }
+          }
+          // No open round — default to the latest locked round
+          const locked = deadlinesData.filter((d) => d.isLocked);
+          if (locked.length > 0) {
+            setCurrentRound(locked[locked.length - 1].round);
+            return;
           }
         }
       } catch (err) {

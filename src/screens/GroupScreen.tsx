@@ -94,9 +94,20 @@ export function GroupScreen({ navigation, route }: Props) {
     return openDeadline || null;
   }, [deadlines]);
 
+  // When all rounds are locked, find the latest locked round (for showing pick state)
+  const latestLockedDeadline = useMemo(() => {
+    if (!deadlines || nextDeadline) return null;
+    // All rounds locked — pick the last one that has a lockAt
+    const locked = deadlines.filter((d) => d.isLocked);
+    return locked.length > 0 ? locked[locked.length - 1] : null;
+  }, [deadlines, nextDeadline]);
+
+  // activeDeadline = the one we display (open round preferred, else latest locked)
+  const activeDeadline = nextDeadline || latestLockedDeadline;
+
   const currentRound = useMemo(() => {
-    return nextDeadline?.round || null;
-  }, [nextDeadline]);
+    return activeDeadline?.round || null;
+  }, [activeDeadline]);
 
   // Schedule pick reminders when deadlines update
   React.useEffect(() => {
@@ -143,7 +154,7 @@ export function GroupScreen({ navigation, route }: Props) {
     return group?.tournament?.entryOpen === false || new Date() >= entryDeadline;
   }, [deadlines, group]);
 
-  // Countdown for urgency banner
+  // Countdown for urgency banner (only for open rounds, not locked)
   const deadlineCountdown = useCountdown(nextDeadline?.lockAt || '');
 
   const handleJoinGroup = useCallback(async () => {
@@ -420,20 +431,18 @@ export function GroupScreen({ navigation, route }: Props) {
                   </Text>
                 )}
               </>
-            ) : (
-              /* Pick locked - show pick locked state */
-              nextDeadline && !nextDeadline.isOpen && currentPick && (
-                <View style={[styles.pickCard, { backgroundColor: colours.successBg, borderColor: colours.successBorder }]}>
-                  <View style={styles.pickCardContent}>
-                    <View style={styles.pickCardLeft}>
-                      <Text style={styles.pickEyebrow}>YOUR {currentRound} PICK</Text>
-                      <Text style={styles.pickPlayerName}>{currentPick.playerName}</Text>
-                    </View>
-                    <Text style={styles.pickedLocked}>🔒</Text>
+            ) : currentPick ? (
+              /* Pick locked (including all-rounds-locked state) */
+              <View style={[styles.pickCard, { backgroundColor: colours.successBg, borderColor: colours.successBorder }]}>
+                <View style={styles.pickCardContent}>
+                  <View style={styles.pickCardLeft}>
+                    <Text style={styles.pickEyebrow}>YOUR {currentRound} PICK</Text>
+                    <Text style={styles.pickPlayerName}>{currentPick.playerName}</Text>
                   </View>
+                  <Text style={styles.pickedLocked}>{'\uD83D\uDD12'}</Text>
                 </View>
-              )
-            )}
+              </View>
+            ) : null}
           </View>
         )}
 
