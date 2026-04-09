@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, RefreshControl,
-  SafeAreaView, StyleSheet, ScrollView, Modal, Pressable, Linking,
+  SafeAreaView, StyleSheet, ScrollView, Modal, Pressable, ActivityIndicator,
 } from 'react-native';
 import { useRoute } from '@react-navigation/native';
-import { getRounds, getBracket, DrawMatch, DrawPlayer, BracketData } from '../api/draw';
+import { getRounds, getBracket, getMatchup, DrawMatch, DrawPlayer, BracketData, MatchupData } from '../api/draw';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 import EmptyState from '../components/EmptyState';
-import Badge from '../components/Badge';
+// Badge no longer used in this screen
 import { colours, spacing, borderRadius, shadows } from '../theme';
 import { ROUND_LABELS, ROUND_ORDER } from '../utils/constants';
 
@@ -373,9 +373,6 @@ export function DrawScreen() {
       {selectedMatch && (
         <MatchDetailModal
           match={selectedMatch}
-          playerMap={playerMap}
-          nextRoundMap={nextRoundMap}
-          currentRound={currentRound}
           onClose={() => setSelectedMatch(null)}
         />
       )}
@@ -387,151 +384,331 @@ export function DrawScreen() {
 
 interface MatchDetailModalProps {
   match: DrawMatch;
-  playerMap: Record<string, DrawPlayer>;
-  nextRoundMap: Record<string, { nextRound: string; opponentName: string | null; matchId: string }>;
-  currentRound: string | null;
   onClose: () => void;
 }
 
-function MatchDetailModal({ match, playerMap, nextRoundMap, currentRound, onClose }: MatchDetailModalProps) {
-  const isCompleted = match.status === 'completed';
-  const isLive = isLiveStatus(match.status);
-  const p1Won = match.winnerId === match.player1Id;
-  const p2Won = match.winnerId === match.player2Id;
+// ── Helpers for matchup modal ────────────────────────────────────────────────
 
-  const p1 = playerMap[match.player1Id];
-  const p2 = playerMap[match.player2Id];
+function isUnknownPlayer(name: string | undefined): boolean {
+  if (!name) return true;
+  return ['Qualifier', 'TBD', 'BYE'].includes(name);
+}
 
-  const winnerId = match.winnerId;
-  const nextInfo = winnerId ? nextRoundMap[winnerId] : null;
-
-  const roundLabel = ROUND_LABELS[match.round] || match.round;
-
-  // Build Google H2H search URL
-  const openH2H = () => {
-    const p1Name = match.player1Name || '';
-    const p2Name = match.player2Name || '';
-    if (!p1Name || !p2Name || p1Name === 'TBD' || p2Name === 'TBD') return;
-    const query = encodeURIComponent(`${p1Name} vs ${p2Name} head to head tennis`);
-    Linking.openURL(`https://www.google.com/search?q=${query}`);
+function formatSetScore(s1: string, s2: string): string {
+  const format = (v: string) => {
+    const str = String(v);
+    if (str.includes('.')) {
+      const [game, tb] = str.split('.');
+      return `${game}(${tb})`;
+    }
+    return str;
   };
+  return `${format(s1)}-${format(s2)}`;
+}
 
-  // Open ATP player profile search
-  const openPlayerProfile = (name: string) => {
-    if (!name || name === 'TBD') return;
-    const query = encodeURIComponent(`${name} ATP tennis profile`);
-    Linking.openURL(`https://www.google.com/search?q=${query}`);
+function formatMatchScoreFromSets(scores: Array<{ score_first: string; score_second: string }>): string {
+  if (!Array.isArray(scores)) return '';
+  return scores
+    .filter(s => !(s.score_first === '0' && s.score_second === '0'))
+    .map(s => formatSetScore(s.score_first, s.score_second))
+    .join(' ');
+}
+
+function shortRound(roundStr: string | null): string {
+  if (!roundStr) return '';
+  const r = roundStr.toLowerCase();
+  if (r.includes('1/64'))    return 'R128';
+  if (r.includes('1/32'))    return 'R64';
+  if (r.includes('1/16'))    return 'R32';
+  if (r.includes('1/8'))     return 'R16';
+  if (r.includes('quarter')) return 'QF';
+  if (r.includes('semi'))    return 'SF';
+  if (r.includes('final'))   return 'F';
+  return roundStr.replace(/^.*?-\s*/, '');
+}
+
+function surname(name: string | null): string {
+  if (!name) return '';
+  return name.split(' ').pop() || '';
+}
+
+function winPct(won: number, lost: number): number {
+  const total = won + lost;
+  if (total === 0) return 0;
+  return won / total;
+}
+
+function MatchDetailModal({ match, onClose }: MatchDetailModalProps) {
+  const [data, setData] = useState<MatchupData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const p1Unknown = isUnknownPlayer(match.player1Name);
+  const p2Unknown = isUnknownPlayer(match.player2Name);
+
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+
+    const p1Key = match.player1ApiKey || match.player1Id;
+    const p2Key = match.player2ApiKey || match.player2Id;
+
+    // Both players known: full H2H
+    if (p1Key && p2Key && !p1Unknown && !p2Unknown) {
+      getMatchup(p1Key, p2Key)
+        .then(d => { setData(d); setLoading(false); })
+        .catch(e => { setError(e.message); setLoading(false); });
+      return;
+    }
+
+    // One player known: fetch their profile via self-H2H
+    const knownKey = p1Unknown ? p2Key : p1Key;
+    if (knownKey) {
+      getMatchup(knownKey, knownKey)
+        .then(d => {
+          const knownData = d.player1;
+          const emptyPlayer = { key: '', name: null, country: null, logo: null, rank: null, clay: { won: 0, lost: 0 }, overall: { won: 0, lost: 0 }, season: null, recent: [] };
+          setData({
+            player1: p1Unknown ? emptyPlayer : knownData,
+            player2: p2Unknown ? emptyPlayer : knownData,
+            h2h: { player1Wins: 0, player2Wins: 0, meetings: [] },
+          });
+          setLoading(false);
+        })
+        .catch(e => { setError(e.message); setLoading(false); });
+      return;
+    }
+
+    setLoading(false);
+    setError('No player data available');
+  }, [match.player1ApiKey, match.player1Id, match.player2ApiKey, match.player2Id, p1Unknown, p2Unknown]);
+
+  // ── Render ──
+
+  const renderLoading = () => (
+    <View style={styles.muLoadingWrap}>
+      <ActivityIndicator size="large" color={colours.primary} />
+      <Text style={styles.muLoadingText}>Loading matchup data...</Text>
+    </View>
+  );
+
+  const renderError = () => (
+    <View style={styles.muLoadingWrap}>
+      <Text style={styles.muErrorText}>No head-to-head data available.</Text>
+    </View>
+  );
+
+  const renderContent = () => {
+    if (!data) return renderError();
+
+    const NO_RECORD = { won: 0, lost: 0 };
+    const raw1 = data.player1 || {} as any;
+    const raw2 = data.player2 || {} as any;
+    const p1 = { ...raw1, clay: raw1.clay || NO_RECORD, overall: raw1.overall || NO_RECORD };
+    const p2 = { ...raw2, clay: raw2.clay || NO_RECORD, overall: raw2.overall || NO_RECORD };
+    const h2h = data.h2h || { player1Wins: 0, player2Wins: 0, meetings: [] };
+
+    const p1Name = p1.name || match.player1Name || 'TBD';
+    const p2Name = p2.name || match.player2Name || 'TBD';
+    const p1Sur = surname(p1Name);
+    const p2Sur = surname(p2Name);
+
+    const hasClay = (p1.clay.won + p1.clay.lost + p2.clay.won + p2.clay.lost) > 0;
+    const hasOnlyOnePlayer = p1Unknown !== p2Unknown;
+
+    const p1ClayBetter = winPct(p1.clay.won, p1.clay.lost) > winPct(p2.clay.won, p2.clay.lost);
+    const p2ClayBetter = winPct(p2.clay.won, p2.clay.lost) > winPct(p1.clay.won, p1.clay.lost);
+    const p1OverallBetter = winPct(p1.overall.won, p1.overall.lost) > winPct(p2.overall.won, p2.overall.lost);
+    const p2OverallBetter = winPct(p2.overall.won, p2.overall.lost) > winPct(p1.overall.won, p1.overall.lost);
+
+    const filterRecent = (results: any[], playerName: string) =>
+      (results || []).filter((r: any) => r.opponent && r.opponent !== playerName);
+
+    const p1Recent = filterRecent(p1.recent, p1Name);
+    const p2Recent = filterRecent(p2.recent, p2Name);
+
+    return (
+      <>
+        {/* H2H header */}
+        <View style={styles.muH2hBar}>
+          <View style={styles.muPlayerCol}>
+            <Text style={styles.muPlayerName} numberOfLines={2}>{p1Name}</Text>
+            <Text style={styles.muPlayerMeta}>
+              {p1Unknown ? 'TBC' : `${p1.country || ''}${p1.rank ? ` \u00B7 #${p1.rank}` : ''}`}
+            </Text>
+          </View>
+
+          {!hasOnlyOnePlayer ? (
+            <View style={styles.muVsCol}>
+              <Text style={styles.muVsLabel}>Head to Head</Text>
+              <View style={styles.muVsScoreRow}>
+                <Text style={[styles.muVsNum, h2h.player1Wins > h2h.player2Wins && styles.muVsNumBold]}>
+                  {h2h.player1Wins}
+                </Text>
+                <Text style={styles.muVsDivider}> - </Text>
+                <Text style={[styles.muVsNum, h2h.player2Wins > h2h.player1Wins && styles.muVsNumBold]}>
+                  {h2h.player2Wins}
+                </Text>
+              </View>
+            </View>
+          ) : (
+            <View style={styles.muVsCol}>
+              <Text style={styles.muVsLabel}>vs</Text>
+            </View>
+          )}
+
+          <View style={styles.muPlayerCol}>
+            <Text style={styles.muPlayerName} numberOfLines={2}>{p2Name}</Text>
+            <Text style={styles.muPlayerMeta}>
+              {p2Unknown ? 'TBC' : `${p2.country || ''}${p2.rank ? ` \u00B7 #${p2.rank}` : ''}`}
+            </Text>
+          </View>
+        </View>
+
+        {/* Season stats */}
+        <View style={styles.muSection}>
+          <Text style={styles.muSectionTitle}>
+            {p1.season || p2.season ? `${p1.season || p2.season} Season` : 'Season Stats'}
+          </Text>
+          <View style={styles.muStatsGrid}>
+            {hasClay && (
+              <View style={styles.muStatCard}>
+                <Text style={styles.muStatLabel}>
+                  Clay Record{(p1.claySeason || p2.claySeason) ? ` (${p1.claySeason || p2.claySeason})` : ''}
+                </Text>
+                <View style={styles.muStatValues}>
+                  {!p1Unknown && (
+                    <View style={styles.muStatValCol}>
+                      <Text style={[styles.muStatNum, styles.muStatGreen, p1ClayBetter && styles.muStatBold]}>
+                        {p1.clay.won}-{p1.clay.lost}
+                      </Text>
+                      <Text style={styles.muStatSub}>{p1Sur}</Text>
+                    </View>
+                  )}
+                  {!p2Unknown && (
+                    <View style={styles.muStatValCol}>
+                      <Text style={[styles.muStatNum, styles.muStatGreen, p2ClayBetter && styles.muStatBold]}>
+                        {p2.clay.won}-{p2.clay.lost}
+                      </Text>
+                      <Text style={styles.muStatSub}>{p2Sur}</Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+            )}
+            <View style={styles.muStatCard}>
+              <Text style={styles.muStatLabel}>Overall Record</Text>
+              <View style={styles.muStatValues}>
+                {!p1Unknown && (
+                  <View style={styles.muStatValCol}>
+                    <Text style={[styles.muStatNum, !hasOnlyOnePlayer && p1OverallBetter && styles.muStatBold]}>
+                      {p1.overall.won}-{p1.overall.lost}
+                    </Text>
+                    <Text style={styles.muStatSub}>{p1Sur}</Text>
+                  </View>
+                )}
+                {!p2Unknown && (
+                  <View style={styles.muStatValCol}>
+                    <Text style={[styles.muStatNum, !hasOnlyOnePlayer && p2OverallBetter && styles.muStatBold]}>
+                      {p2.overall.won}-{p2.overall.lost}
+                    </Text>
+                    <Text style={styles.muStatSub}>{p2Sur}</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Recent form */}
+        {(p1Recent.length > 0 || p2Recent.length > 0) && (
+          <View style={styles.muSection}>
+            <Text style={styles.muSectionTitle}>Recent Form</Text>
+            <View style={styles.muFormCols}>
+              {!p1Unknown && p1Recent.length > 0 && (
+                <View style={styles.muFormCol}>
+                  <Text style={styles.muFormHeader}>{p1Sur}</Text>
+                  {p1Recent.map((r: any, i: number) => {
+                    const rl = shortRound(r.round);
+                    return (
+                      <View key={i} style={styles.muFormRow}>
+                        <View style={[styles.muWlBadge, r.won ? styles.muWlWin : styles.muWlLoss]}>
+                          <Text style={[styles.muWlText, r.won ? styles.muWlTextW : styles.muWlTextL]}>
+                            {r.won ? 'W' : 'L'}
+                          </Text>
+                        </View>
+                        <View style={styles.muFormDetail}>
+                          <Text style={styles.muFormOpp} numberOfLines={1}>{r.opponent}</Text>
+                          <Text style={styles.muFormEvent} numberOfLines={1}>
+                            {r.tournament}{rl ? ` \u00B7 ${rl}` : ''}
+                          </Text>
+                        </View>
+                        <Text style={styles.muFormScore} numberOfLines={1}>
+                          {formatMatchScoreFromSets(r.scores)}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
+              {!p2Unknown && p2Recent.length > 0 && (
+                <View style={styles.muFormCol}>
+                  <Text style={styles.muFormHeader}>{p2Sur}</Text>
+                  {p2Recent.map((r: any, i: number) => {
+                    const rl = shortRound(r.round);
+                    return (
+                      <View key={i} style={styles.muFormRow}>
+                        <View style={[styles.muWlBadge, r.won ? styles.muWlWin : styles.muWlLoss]}>
+                          <Text style={[styles.muWlText, r.won ? styles.muWlTextW : styles.muWlTextL]}>
+                            {r.won ? 'W' : 'L'}
+                          </Text>
+                        </View>
+                        <View style={styles.muFormDetail}>
+                          <Text style={styles.muFormOpp} numberOfLines={1}>{r.opponent}</Text>
+                          <Text style={styles.muFormEvent} numberOfLines={1}>
+                            {r.tournament}{rl ? ` \u00B7 ${rl}` : ''}
+                          </Text>
+                        </View>
+                        <Text style={styles.muFormScore} numberOfLines={1}>
+                          {formatMatchScoreFromSets(r.scores)}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
+            </View>
+          </View>
+        )}
+
+        <Text style={styles.muFooter}>Data from API-Tennis {'\u00B7'} Updated every hour</Text>
+      </>
+    );
   };
 
   return (
     <Modal transparent visible animationType="slide" onRequestClose={onClose}>
       <Pressable style={styles.modalOverlay} onPress={onClose}>
         <Pressable style={styles.modalSheet} onPress={(e) => e.stopPropagation()}>
-          {/* Handle */}
-          <View style={styles.modalHandle} />
+          <ScrollView bounces={false} showsVerticalScrollIndicator={false}>
+            {/* Handle */}
+            <View style={styles.modalHandle} />
 
-          {/* Round + Status */}
-          <View style={styles.modalRoundRow}>
-            <Text style={styles.modalRoundLabel}>{roundLabel}</Text>
-            {isLive && <Badge label="Live" variant="danger" size="sm" />}
-            {isCompleted && <Badge label="Finished" variant="success" size="sm" />}
-            {!isLive && !isCompleted && <Badge label="Scheduled" variant="muted" size="sm" />}
-          </View>
-
-          {/* Date/time */}
-          {match.startTime && (
-            <Text style={styles.modalDateTime}>
-              {formatMatchDate(match.startTime)} at {formatMatchTime(match.startTime)}
-            </Text>
-          )}
-
-          {/* Players head to head card */}
-          <View style={styles.h2hCard}>
-            {/* Player 1 */}
-            <TouchableOpacity
-              style={[styles.h2hPlayer, p1Won && styles.h2hPlayerWon]}
-              onPress={() => openPlayerProfile(match.player1Name || '')}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.h2hAvatar, p1Won && styles.h2hAvatarWon]}>
-                <Text style={styles.h2hAvatarText}>
-                  {(match.player1Name || 'T')[0].toUpperCase()}
-                </Text>
-              </View>
-              <Text style={[styles.h2hName, p1Won && styles.h2hNameWon]} numberOfLines={2}>
-                {match.player1Name || 'TBD'}
-              </Text>
-              {p1?.seed != null && (
-                <Text style={styles.h2hSeed}>#{p1.seed} seed</Text>
-              )}
-              {p1Won && <Text style={styles.h2hWinLabel}>{'\u2713'} Won</Text>}
-              {isCompleted && !p1Won && <Text style={styles.h2hLoseLabel}>Lost</Text>}
-            </TouchableOpacity>
-
-            {/* VS divider */}
-            <View style={styles.h2hVs}>
-              <Text style={styles.h2hVsText}>vs</Text>
+            {/* Header */}
+            <View style={styles.muHeaderRow}>
+              <Text style={styles.muHeaderTitle}>Matchup Info</Text>
+              <TouchableOpacity onPress={onClose} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+                <Text style={styles.muHeaderClose}>{'\u00D7'}</Text>
+              </TouchableOpacity>
             </View>
 
-            {/* Player 2 */}
-            <TouchableOpacity
-              style={[styles.h2hPlayer, p2Won && styles.h2hPlayerWon]}
-              onPress={() => openPlayerProfile(match.player2Name || '')}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.h2hAvatar, p2Won && styles.h2hAvatarWon]}>
-                <Text style={styles.h2hAvatarText}>
-                  {(match.player2Name || 'T')[0].toUpperCase()}
-                </Text>
-              </View>
-              <Text style={[styles.h2hName, p2Won && styles.h2hNameWon]} numberOfLines={2}>
-                {match.player2Name || 'TBD'}
-              </Text>
-              {p2?.seed != null && (
-                <Text style={styles.h2hSeed}>#{p2.seed} seed</Text>
-              )}
-              {p2Won && <Text style={styles.h2hWinLabel}>{'\u2713'} Won</Text>}
-              {isCompleted && !p2Won && <Text style={styles.h2hLoseLabel}>Lost</Text>}
+            {loading ? renderLoading() : (error && !data) ? renderError() : renderContent()}
+
+            {/* Close button */}
+            <TouchableOpacity style={styles.modalClose} onPress={onClose}>
+              <Text style={styles.modalCloseText}>Close</Text>
             </TouchableOpacity>
-          </View>
-
-          {/* Score */}
-          {isCompleted && match.score && (
-            <View style={styles.scoreCard}>
-              <Text style={styles.scoreCardLabel}>Score</Text>
-              <Text style={styles.scoreCardValue}>{match.score}</Text>
-            </View>
-          )}
-
-          {/* Next round context */}
-          {nextInfo && isCompleted && (
-            <View style={styles.nextRoundCard}>
-              <Text style={styles.nextRoundCardLabel}>Next</Text>
-              <Text style={styles.nextRoundCardValue}>
-                Winner plays {nextInfo.opponentName || 'TBD'} in {ROUND_LABELS[nextInfo.nextRound] || nextInfo.nextRound}
-              </Text>
-            </View>
-          )}
-
-          {/* H2H lookup button */}
-          {match.player1Name && match.player2Name &&
-           match.player1Name !== 'TBD' && match.player2Name !== 'TBD' && (
-            <TouchableOpacity style={styles.h2hButton} onPress={openH2H} activeOpacity={0.7}>
-              <Text style={styles.h2hButtonText}>
-                Look up head-to-head {'\u2192'}
-              </Text>
-            </TouchableOpacity>
-          )}
-
-          {/* Tap player hint */}
-          <Text style={styles.modalHint}>
-            Tap a player name to look up their profile
-          </Text>
-
-          {/* Close */}
-          <TouchableOpacity style={styles.modalClose} onPress={onClose}>
-            <Text style={styles.modalCloseText}>Close</Text>
-          </TouchableOpacity>
+          </ScrollView>
         </Pressable>
       </Pressable>
     </Modal>
@@ -798,7 +975,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
     paddingBottom: 40,
-    maxHeight: '75%',
+    maxHeight: '85%',
   },
   modalHandle: {
     width: 36,
@@ -806,174 +983,225 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: colours.gray200,
     alignSelf: 'center',
-    marginBottom: spacing.lg,
-  },
-  modalRoundRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: 4,
-  },
-  modalRoundLabel: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colours.text,
-  },
-  modalDateTime: {
-    fontSize: 13,
-    color: colours.textMuted,
-    marginBottom: spacing.lg,
-  },
-
-  // H2H card
-  h2hCard: {
-    flexDirection: 'row',
-    alignItems: 'stretch',
-    gap: 0,
     marginBottom: spacing.md,
   },
-  h2hPlayer: {
-    flex: 1,
-    backgroundColor: colours.gray50,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: colours.border,
-  },
-  h2hPlayerWon: {
-    backgroundColor: '#f0fdf4',
-    borderColor: '#86efac',
-  },
-  h2hAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colours.gray300,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  h2hAvatarWon: {
-    backgroundColor: colours.primary,
-  },
-  h2hAvatarText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colours.white,
-  },
-  h2hName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colours.text,
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  h2hNameWon: {
-    color: colours.green700,
-    fontWeight: '700',
-  },
-  h2hSeed: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: colours.primary,
-    backgroundColor: colours.primaryLight,
-    borderRadius: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    overflow: 'hidden',
-    marginBottom: 4,
-  },
-  h2hWinLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colours.success,
-    marginTop: 4,
-  },
-  h2hLoseLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: colours.textMuted,
-    marginTop: 4,
-  },
-  h2hVs: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 32,
-  },
-  h2hVsText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colours.textMuted,
-    textTransform: 'uppercase',
-  },
 
-  // Score card
-  scoreCard: {
-    backgroundColor: colours.gray50,
-    borderRadius: borderRadius.sm,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colours.border,
+  // Header row
+  muHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
   },
-  scoreCardLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colours.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: 4,
-  },
-  scoreCardValue: {
+  muHeaderTitle: {
     fontSize: 18,
     fontWeight: '700',
     color: colours.text,
-    letterSpacing: 0.5,
+  },
+  muHeaderClose: {
+    fontSize: 28,
+    fontWeight: '300',
+    color: colours.textMuted,
+    lineHeight: 28,
   },
 
-  // Next round card
-  nextRoundCard: {
-    backgroundColor: colours.blue50,
-    borderRadius: borderRadius.sm,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colours.blue100,
-  },
-  nextRoundCardLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colours.blue700,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: 4,
-  },
-  nextRoundCardValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colours.blue800,
-  },
-
-  // H2H button
-  h2hButton: {
-    backgroundColor: colours.primary,
-    borderRadius: borderRadius.sm,
-    paddingVertical: 12,
+  // Loading / error
+  muLoadingWrap: {
+    paddingVertical: spacing.xl,
     alignItems: 'center',
-    marginBottom: spacing.sm,
+    justifyContent: 'center',
   },
-  h2hButtonText: {
+  muLoadingText: {
     fontSize: 14,
-    fontWeight: '700',
-    color: colours.white,
+    color: colours.textMuted,
+    marginTop: spacing.md,
   },
-
-  // Modal hint
-  modalHint: {
-    fontSize: 11.5,
+  muErrorText: {
+    fontSize: 14,
     color: colours.textMuted,
     textAlign: 'center',
+  },
+
+  // H2H bar
+  muH2hBar: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: spacing.lg,
+  },
+  muPlayerCol: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  muPlayerName: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colours.text,
+    textAlign: 'center',
+    marginBottom: 2,
+  },
+  muPlayerMeta: {
+    fontSize: 12,
+    color: colours.textMuted,
+    textAlign: 'center',
+  },
+  muVsCol: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.sm,
+    minWidth: 70,
+  },
+  muVsLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: colours.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  muVsScoreRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  muVsNum: {
+    fontSize: 24,
+    fontWeight: '400',
+    color: colours.text,
+  },
+  muVsNumBold: {
+    fontWeight: '800',
+  },
+  muVsDivider: {
+    fontSize: 20,
+    color: colours.textMuted,
+  },
+
+  // Sections
+  muSection: {
+    marginBottom: spacing.lg,
+  },
+  muSectionTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colours.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: spacing.sm,
+  },
+
+  // Stats grid
+  muStatsGrid: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  muStatCard: {
+    flex: 1,
+    backgroundColor: colours.gray50,
+    borderRadius: borderRadius.sm,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colours.border,
+  },
+  muStatLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colours.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: spacing.sm,
+    textAlign: 'center',
+  },
+  muStatValues: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  muStatValCol: {
+    alignItems: 'center',
+  },
+  muStatNum: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colours.text,
+  },
+  muStatGreen: {
+    color: colours.primary,
+  },
+  muStatBold: {
+    fontWeight: '800',
+  },
+  muStatSub: {
+    fontSize: 11,
+    color: colours.textMuted,
+    marginTop: 2,
+  },
+
+  // Recent form
+  muFormCols: {
+    gap: spacing.lg,
+  },
+  muFormCol: {},
+  muFormHeader: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colours.text,
+    marginBottom: spacing.sm,
+  },
+  muFormRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colours.border,
+  },
+  muWlBadge: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.sm,
+  },
+  muWlWin: {
+    backgroundColor: colours.successBg,
+  },
+  muWlLoss: {
+    backgroundColor: colours.dangerBg,
+  },
+  muWlText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  muWlTextW: {
+    color: colours.success,
+  },
+  muWlTextL: {
+    color: colours.danger,
+  },
+  muFormDetail: {
+    flex: 1,
+    marginRight: spacing.sm,
+  },
+  muFormOpp: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colours.text,
+  },
+  muFormEvent: {
+    fontSize: 11,
+    color: colours.textMuted,
+  },
+  muFormScore: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: colours.textSecondary,
+    textAlign: 'right',
+  },
+
+  // Footer
+  muFooter: {
+    fontSize: 11,
+    color: colours.textMuted,
+    textAlign: 'center',
+    marginTop: spacing.sm,
     marginBottom: spacing.md,
   },
 
@@ -983,6 +1211,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.sm,
     paddingVertical: 14,
     alignItems: 'center',
+    marginTop: spacing.sm,
   },
   modalCloseText: {
     fontSize: 15,
