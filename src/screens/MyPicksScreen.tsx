@@ -42,12 +42,14 @@ export default function MyPicksScreen() {
     try {
       const pools = await getMyPools();
       const settled = await Promise.allSettled(
-        pools.map(async (pool) => {
-          const picks = await getPickHistory(pool.id);
+        pools.map(async (pool: any) => {
+          const id = pool.groupId || pool.id;
+          const name = pool.groupName || pool.name;
+          const picks = await getPickHistory(id);
           const sorted = [...picks].sort((a: any, b: any) =>
             ROUND_ORDER.indexOf(a.round as any) - ROUND_ORDER.indexOf(b.round as any)
           );
-          return { groupId: pool.id, groupName: pool.name, picks: sorted };
+          return { groupId: id, groupName: name, picks: sorted };
         })
       );
       const results = settled
