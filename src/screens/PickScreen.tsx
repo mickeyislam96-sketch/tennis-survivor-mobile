@@ -128,11 +128,14 @@ export default function PickScreen({ route }: Props) {
       .filter(Boolean)
   );
 
-  // Filter available players
+  // Filter available players (search matches player name, opponent name, or possible opponents)
   const filtered = available.filter((p) => {
     const name = (p.name || '').toLowerCase().trim();
+    const opponent = (p.opponentName || '').toLowerCase().trim();
+    const possible = (p.opponentPossible || []).map((o: string) => o.toLowerCase());
     const alive = !p.roundEliminated;
-    const matchesSearch = !search.trim() || name.includes(search.trim().toLowerCase());
+    const q = search.trim().toLowerCase();
+    const matchesSearch = !q || name.includes(q) || opponent.includes(q) || possible.some((o: string) => o.includes(q));
     return alive && matchesSearch;
   });
 
@@ -184,7 +187,7 @@ export default function PickScreen({ route }: Props) {
     loadInitialData();
   }, [groupId, user?.id]);
 
-  // Fetch available players when round changes
+  // Fetch available players when round changes + auto-refresh every 60s
   useEffect(() => {
     if (!groupId || !currentRound) return;
 
@@ -198,6 +201,25 @@ export default function PickScreen({ route }: Props) {
     };
 
     loadPlayers();
+
+    // Auto-refresh players + picks every 60s (matches web behaviour)
+    let mounted = true;
+    const interval = setInterval(async () => {
+      if (!mounted) return;
+      try {
+        const [playersData, picksData] = await Promise.all([
+          getAvailablePlayers(groupId, currentRound),
+          getPickHistory(groupId),
+        ]);
+        if (!mounted) return;
+        setAvailable(playersData);
+        setAllPicks(picksData);
+      } catch {
+        // Silent fail on background refresh
+      }
+    }, 60_000);
+
+    return () => { mounted = false; clearInterval(interval); };
   }, [groupId, currentRound]);
 
   // Refetch picks when returning to screen

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,7 +15,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
-import { updateProfile } from '../api/auth';
+import { updateProfile, getMyPools } from '../api/auth';
 import { colours, spacing, borderRadius } from '../theme';
 import type { ProfileStackParamList } from '../navigation/ProfileStack';
 
@@ -41,6 +41,23 @@ export default function ProfileScreen() {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [saving, setSaving] = useState(false);
+  const [pools, setPools] = useState<any[]>([]);
+  const [poolsLoading, setPoolsLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const data = await getMyPools();
+        if (mounted) setPools(data);
+      } catch {
+        // silent
+      } finally {
+        if (mounted) setPoolsLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
 
   const hasChanges =
     displayName !== user?.displayName ||
@@ -117,6 +134,46 @@ export default function ProfileScreen() {
             </View>
             <Text style={styles.userName}>{user?.displayName}</Text>
             <Text style={styles.userEmail}>{user?.email}</Text>
+          </View>
+
+          {/* My Pools section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>My Pools</Text>
+            {poolsLoading ? (
+              <ActivityIndicator size="small" color={colours.primary} />
+            ) : pools.length === 0 ? (
+              <Text style={styles.poolsEmpty}>You haven't joined any pools yet.</Text>
+            ) : (
+              pools.map((pool: any) => {
+                const id = pool.groupId || pool.id;
+                const name = pool.groupName || pool.name || 'Pool';
+                const isAlive = pool.isAlive !== false;
+                const status = isAlive
+                  ? 'Alive'
+                  : `Eliminated${pool.eliminatedRound ? ' (' + pool.eliminatedRound + ')' : ''}`;
+                const statusColour = isAlive ? colours.success : colours.danger;
+                return (
+                  <TouchableOpacity
+                    key={id}
+                    style={styles.poolRow}
+                    activeOpacity={0.7}
+                    onPress={() => {
+                      // Navigate to the pool's group screen via root navigator
+                      navigation.getParent()?.navigate('Pools', {
+                        screen: 'Group',
+                        params: { groupId: id },
+                      });
+                    }}
+                  >
+                    <View style={styles.poolInfo}>
+                      <Text style={styles.poolName}>{name}</Text>
+                      <Text style={[styles.poolStatus, { color: statusColour }]}>{status}</Text>
+                    </View>
+                    <Text style={styles.poolArrow}>{'\u203A'}</Text>
+                  </TouchableOpacity>
+                );
+              })
+            )}
           </View>
 
           {/* Profile section */}
@@ -257,6 +314,37 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colours.text,
     marginBottom: spacing.md,
+  },
+  poolsEmpty: {
+    fontSize: 13,
+    color: colours.textMuted,
+    fontStyle: 'italic',
+  },
+  poolRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colours.border,
+  },
+  poolInfo: {
+    flex: 1,
+  },
+  poolName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colours.text,
+  },
+  poolStatus: {
+    fontSize: 12,
+    fontWeight: '500',
+    marginTop: 2,
+  },
+  poolArrow: {
+    fontSize: 20,
+    color: colours.textMuted,
+    marginLeft: spacing.sm,
   },
   label: {
     fontSize: 12,

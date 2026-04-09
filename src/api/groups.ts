@@ -30,6 +30,7 @@ export interface Group {
     drawDate?: string;
     startDate: string;
     status: string;
+    entryOpen?: boolean;
   };
 }
 

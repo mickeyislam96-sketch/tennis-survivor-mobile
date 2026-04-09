@@ -53,8 +53,8 @@ export default function MyPicksScreen() {
         })
       );
       const results = settled
-        .filter((r): r is PromiseFulfilledResult<PoolPicks> => r.status === 'fulfilled')
-        .map((r) => r.value);
+        .filter((r) => r.status === 'fulfilled')
+        .map((r) => (r as PromiseFulfilledResult<PoolPicks>).value);
       setPoolPicks(results);
     } catch {
       // Silent fail

@@ -315,8 +315,10 @@ function MemberModal({ member, roundIsLocked, currentRound, onClose, groupId }: 
 
   useEffect(() => {
     if (!member.userId || !groupId) return;
+    let mounted = true;
     getUserPickHistory(member.userId, groupId)
       .then((picks) => {
+        if (!mounted) return;
         const sorted = (picks || []).sort((a, b) => {
           const iA = ROUND_ORDER.indexOf(a.round as any);
           const iB = ROUND_ORDER.indexOf(b.round as any);
@@ -324,7 +326,8 @@ function MemberModal({ member, roundIsLocked, currentRound, onClose, groupId }: 
         });
         setPickHistory(sorted);
       })
-      .catch(() => { setHistoryError(true); setPickHistory([]); });
+      .catch(() => { if (mounted) { setHistoryError(true); setPickHistory([]); } });
+    return () => { mounted = false; };
   }, [member.userId, groupId]);
 
   // Filter out current open round picks (hidden until locked)

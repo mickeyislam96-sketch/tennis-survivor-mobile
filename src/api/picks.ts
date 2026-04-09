@@ -6,6 +6,9 @@ export interface Player {
   seed?: number;
   roundEliminated: string | null;
   pendingPrevRound?: boolean;
+  opponentName?: string | null;
+  opponentPossible?: string[] | null;
+  status?: string;
 }
 
 export interface Pick {

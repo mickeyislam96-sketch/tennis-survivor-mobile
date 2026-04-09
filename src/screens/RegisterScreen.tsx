@@ -10,6 +10,7 @@ import {
   SafeAreaView,
   ActivityIndicator,
   Alert,
+  Linking,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
@@ -30,6 +31,7 @@ export default function RegisterScreen({ navigation }: Props) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const { register } = useAuth();
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
@@ -63,6 +65,9 @@ export default function RegisterScreen({ navigation }: Props) {
     }
     if (password !== confirmPassword) {
       return 'Passwords do not match';
+    }
+    if (!termsAccepted) {
+      return 'You must accept the Terms & Conditions to create an account';
     }
     return null;
   };
@@ -175,6 +180,26 @@ export default function RegisterScreen({ navigation }: Props) {
               )}
             </View>
 
+            {/* Terms acceptance */}
+            <TouchableOpacity
+              style={styles.termsRow}
+              onPress={() => setTermsAccepted(!termsAccepted)}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.checkbox, termsAccepted && styles.checkboxChecked]}>
+                {termsAccepted && <Text style={styles.checkmark}>{'\u2713'}</Text>}
+              </View>
+              <Text style={styles.termsText}>
+                I agree to the{' '}
+                <Text
+                  style={styles.termsLink}
+                  onPress={() => Linking.openURL('https://finalserveivor.com/terms')}
+                >
+                  Terms & Conditions
+                </Text>
+              </Text>
+            </TouchableOpacity>
+
             <TouchableOpacity
               style={[styles.button, loading && styles.buttonDisabled]}
               onPress={handleRegister}
@@ -274,6 +299,42 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colours.success,
     marginTop: spacing.xs,
+  },
+  termsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.md,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderWidth: 1.5,
+    borderColor: colours.border,
+    borderRadius: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.sm,
+    backgroundColor: colours.surface,
+  },
+  checkboxChecked: {
+    backgroundColor: colours.primary,
+    borderColor: colours.primary,
+  },
+  checkmark: {
+    color: colours.white,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  termsText: {
+    flex: 1,
+    fontSize: 13,
+    color: colours.textMuted,
+    lineHeight: 18,
+  },
+  termsLink: {
+    color: colours.primary,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
   button: {
     backgroundColor: colours.primary,

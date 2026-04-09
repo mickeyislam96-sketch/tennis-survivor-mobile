@@ -53,8 +53,13 @@ const PlayerRow: React.FC<PlayerRowProps> = ({
             </View>
           )}
         </View>
-        {player.opponent && (
-          <Text style={styles.opponentText}>vs {player.opponent}</Text>
+        {(player.opponentName || player.opponent) && (
+          <Text style={styles.opponentText}>vs {player.opponentName || player.opponent}</Text>
+        )}
+        {!player.opponentName && !player.opponent && player.opponentPossible?.length > 0 && (
+          <Text style={[styles.opponentText, { fontStyle: 'italic' }]}>
+            vs {player.opponentPossible.join(' or ')}
+          </Text>
         )}
         {isPending && (
           <Text style={styles.pendingText}>
