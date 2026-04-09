@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -29,6 +29,7 @@ export default function LoginScreen({ navigation }: Props) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
+  const passwordRef = useRef<TextInput>(null);
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
@@ -72,12 +73,16 @@ export default function LoginScreen({ navigation }: Props) {
                 editable={!loading}
                 value={email}
                 onChangeText={setEmail}
+                returnKeyType="next"
+                onSubmitEditing={() => passwordRef.current?.focus()}
+                blurOnSubmit={false}
               />
             </View>
 
             <View style={styles.fieldContainer}>
               <Text style={styles.label}>Password</Text>
               <TextInput
+                ref={passwordRef}
                 style={styles.input}
                 placeholder="••••••••"
                 placeholderTextColor={colours.textMuted}
@@ -85,6 +90,8 @@ export default function LoginScreen({ navigation }: Props) {
                 editable={!loading}
                 value={password}
                 onChangeText={setPassword}
+                returnKeyType="go"
+                onSubmitEditing={handleLogin}
               />
             </View>
 
@@ -205,7 +212,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   link: {
-    color: colours.primary,
+    color: 'rgba(255, 255, 255, 0.9)',
     textAlign: 'center',
     marginBottom: spacing.lg,
     fontSize: 14,
@@ -217,11 +224,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   registerText: {
-    color: colours.textSecondary,
+    color: 'rgba(255, 255, 255, 0.7)',
     fontSize: 14,
   },
   registerLink: {
-    color: colours.primary,
+    color: colours.white,
     fontWeight: '600',
     fontSize: 14,
   },

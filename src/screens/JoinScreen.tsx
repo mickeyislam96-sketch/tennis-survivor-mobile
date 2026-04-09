@@ -103,7 +103,9 @@ export default function JoinScreen({ route }: JoinScreenProps) {
           <Text style={styles.emoji}>🎾</Text>
           <Text style={styles.groupName}>{group.name}</Text>
           {group.tournamentId && (
-            <Text style={styles.tournament}>{group.tournamentId}</Text>
+            <Text style={styles.tournament}>
+              {group.tournamentId.replace(/-/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}
+            </Text>
           )}
 
           <View style={styles.divider} />

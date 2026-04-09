@@ -156,7 +156,7 @@ export function DrawScreen() {
     } finally {
       setLoading(false);
     }
-  }, [currentRound, isDrawUnavailable]);
+  }, [isDrawUnavailable]); // removed currentRound dep - data loads once, filtering is client-side
 
   useEffect(() => { loadData(); }, [loadData]);
 

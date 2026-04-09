@@ -41,19 +41,18 @@ export default function MyPicksScreen() {
     if (!user) return;
     try {
       const pools = await getMyPools();
-      const results: PoolPicks[] = [];
-
-      for (const pool of pools) {
-        try {
+      const settled = await Promise.allSettled(
+        pools.map(async (pool) => {
           const picks = await getPickHistory(pool.id);
           const sorted = [...picks].sort((a: any, b: any) =>
             ROUND_ORDER.indexOf(a.round as any) - ROUND_ORDER.indexOf(b.round as any)
           );
-          results.push({ groupId: pool.id, groupName: pool.name, picks: sorted });
-        } catch {
-          // Skip pools where picks fail
-        }
-      }
+          return { groupId: pool.id, groupName: pool.name, picks: sorted };
+        })
+      );
+      const results = settled
+        .filter((r): r is PromiseFulfilledResult<PoolPicks> => r.status === 'fulfilled')
+        .map((r) => r.value);
       setPoolPicks(results);
     } catch {
       // Silent fail

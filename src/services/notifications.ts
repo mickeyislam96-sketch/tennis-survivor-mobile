@@ -42,8 +42,10 @@ export async function registerForPushNotifications(): Promise<string | null> {
 
   // Get Expo push token
   try {
+    // TODO: Set EAS project ID before production build
+    // Run `eas init` to generate one, then update app.json extra.eas.projectId too
     const tokenData = await Notifications.getExpoPushTokenAsync({
-      projectId: '', // Will be set when EAS is configured
+      projectId: '', // REQUIRED: set to your EAS project ID before building
     });
     return tokenData.data;
   } catch (error) {

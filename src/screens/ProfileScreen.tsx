@@ -12,12 +12,29 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
 import { updateProfile } from '../api/auth';
 import { colours, spacing, borderRadius } from '../theme';
+import type { ProfileStackParamList } from '../navigation/ProfileStack';
+
+function isValidEmail(e: string): boolean {
+  const parts = e.split('@');
+  if (parts.length !== 2) return false;
+  const [local, domain] = parts;
+  if (!local || !domain) return false;
+  if (!domain.includes('.')) return false;
+  if (/\s/.test(e)) return false;
+  if (/\.\./.test(e)) return false;
+  if (/^[.\-]/.test(local) || /[.\-]$/.test(local)) return false;
+  if (/^[.\-]/.test(domain) || /[.\-]$/.test(domain)) return false;
+  return true;
+}
 
 export default function ProfileScreen() {
   const { user, logout, refreshUser } = useAuth();
+  const navigation = useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
 
   const [displayName, setDisplayName] = useState(user?.displayName || '');
   const [email, setEmail] = useState(user?.email || '');
@@ -33,6 +50,10 @@ export default function ProfileScreen() {
   const handleSave = async () => {
     if (!hasChanges) return;
 
+    if (email !== user?.email && !isValidEmail(email.trim())) {
+      Alert.alert('Error', 'Please enter a valid email address.');
+      return;
+    }
     if (newPassword && !currentPassword) {
       Alert.alert('Error', 'Enter your current password to set a new one.');
       return;
@@ -171,6 +192,13 @@ export default function ProfileScreen() {
             <Text style={styles.logoutText}>Log Out</Text>
           </TouchableOpacity>
 
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Terms')}
+            style={styles.termsLink}
+          >
+            <Text style={styles.termsLinkText}>Terms & Conditions</Text>
+          </TouchableOpacity>
+
           <Text style={styles.version}>Final Serve-ivor v1.0.0</Text>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -278,10 +306,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
+  termsLink: {
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    marginTop: spacing.md,
+  },
+  termsLinkText: {
+    color: colours.primary,
+    fontSize: 14,
+    fontWeight: '600',
+  },
   version: {
     textAlign: 'center',
     color: colours.textMuted,
     fontSize: 12,
-    marginTop: spacing.lg,
+    marginTop: spacing.sm,
   },
 });

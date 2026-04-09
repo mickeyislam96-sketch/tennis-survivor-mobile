@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -31,6 +31,22 @@ export default function RegisterScreen({ navigation }: Props) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
+  const emailRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInput>(null);
+  const confirmRef = useRef<TextInput>(null);
+
+  const isValidEmail = (e: string): boolean => {
+    const parts = e.split('@');
+    if (parts.length !== 2) return false;
+    const [local, domain] = parts;
+    if (!local || !domain) return false;
+    if (!domain.includes('.')) return false;
+    if (/\s/.test(e)) return false;
+    if (/\.\./.test(e)) return false;
+    if (/^[.\-]/.test(local) || /[.\-]$/.test(local)) return false;
+    if (/^[.\-]/.test(domain) || /[.\-]$/.test(domain)) return false;
+    return true;
+  };
 
   const validateForm = (): string | null => {
     if (!displayName.trim()) {
@@ -38,6 +54,9 @@ export default function RegisterScreen({ navigation }: Props) {
     }
     if (!email.trim()) {
       return 'Please enter an email';
+    }
+    if (!isValidEmail(email.trim())) {
+      return 'Please enter a valid email address';
     }
     if (password.length < 8) {
       return 'Password must be at least 8 characters';
@@ -90,12 +109,16 @@ export default function RegisterScreen({ navigation }: Props) {
                 editable={!loading}
                 value={displayName}
                 onChangeText={setDisplayName}
+                returnKeyType="next"
+                onSubmitEditing={() => emailRef.current?.focus()}
+                blurOnSubmit={false}
               />
             </View>
 
             <View style={styles.fieldContainer}>
               <Text style={styles.label}>Email</Text>
               <TextInput
+                ref={emailRef}
                 style={styles.input}
                 placeholder="you@example.com"
                 placeholderTextColor={colours.textMuted}
@@ -104,12 +127,16 @@ export default function RegisterScreen({ navigation }: Props) {
                 editable={!loading}
                 value={email}
                 onChangeText={setEmail}
+                returnKeyType="next"
+                onSubmitEditing={() => passwordRef.current?.focus()}
+                blurOnSubmit={false}
               />
             </View>
 
             <View style={styles.fieldContainer}>
               <Text style={styles.label}>Password</Text>
               <TextInput
+                ref={passwordRef}
                 style={styles.input}
                 placeholder="Min 8 characters"
                 placeholderTextColor={colours.textMuted}
@@ -117,6 +144,9 @@ export default function RegisterScreen({ navigation }: Props) {
                 editable={!loading}
                 value={password}
                 onChangeText={setPassword}
+                returnKeyType="next"
+                onSubmitEditing={() => confirmRef.current?.focus()}
+                blurOnSubmit={false}
               />
               {password.length > 0 && password.length < 8 && (
                 <Text style={styles.hint}>Min 8 characters</Text>
@@ -126,6 +156,7 @@ export default function RegisterScreen({ navigation }: Props) {
             <View style={styles.fieldContainer}>
               <Text style={styles.label}>Confirm Password</Text>
               <TextInput
+                ref={confirmRef}
                 style={styles.input}
                 placeholder="••••••••"
                 placeholderTextColor={colours.textMuted}
@@ -133,6 +164,8 @@ export default function RegisterScreen({ navigation }: Props) {
                 editable={!loading}
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
+                returnKeyType="go"
+                onSubmitEditing={handleRegister}
               />
               {confirmPassword.length > 0 && password === confirmPassword && (
                 <Text style={styles.hintSuccess}>Passwords match</Text>
@@ -267,11 +300,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loginText: {
-    color: colours.textSecondary,
+    color: 'rgba(255, 255, 255, 0.7)',
     fontSize: 14,
   },
   loginLink: {
-    color: colours.primary,
+    color: colours.white,
     fontWeight: '600',
     fontSize: 14,
   },

@@ -117,8 +117,6 @@ const styles = StyleSheet.create({
     color: '#15803d',
   },
   seedBadge: {
-    fontWeight: '700' as const,
-    color: '#15803d',
     backgroundColor: '#f0fdf4',
     paddingVertical: 4,
     paddingHorizontal: 10,
