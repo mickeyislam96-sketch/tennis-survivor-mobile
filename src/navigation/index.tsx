@@ -10,24 +10,6 @@ import { colours, fonts } from '../theme';
 import * as Linking from 'expo-linking';
 import { useNotifications } from '../hooks/useNotifications';
 import { useFonts } from 'expo-font';
-import {
-  Outfit_400Regular,
-  Outfit_500Medium,
-  Outfit_600SemiBold,
-  Outfit_700Bold,
-  Outfit_800ExtraBold,
-} from '@expo-google-fonts/outfit';
-import {
-  Fraunces_400Regular,
-  Fraunces_400Regular_Italic,
-  Fraunces_700Bold,
-  Fraunces_700Bold_Italic,
-} from '@expo-google-fonts/fraunces';
-import {
-  JetBrainsMono_400Regular,
-  JetBrainsMono_500Medium,
-  JetBrainsMono_700Bold,
-} from '@expo-google-fonts/jetbrains-mono';
 
 // Deep linking configuration
 const linking = {
@@ -87,18 +69,21 @@ function AppNavigator() {
 
 export default function App() {
   const [fontsLoaded] = useFonts({
-    Outfit_400Regular,
-    Outfit_500Medium,
-    Outfit_600SemiBold,
-    Outfit_700Bold,
-    Outfit_800ExtraBold,
-    Fraunces_400Regular,
-    Fraunces_400Regular_Italic,
-    Fraunces_700Bold,
-    Fraunces_700Bold_Italic,
-    JetBrainsMono_400Regular,
-    JetBrainsMono_500Medium,
-    JetBrainsMono_700Bold,
+    // Outfit (sans)
+    'Outfit_400Regular': require('@expo-google-fonts/outfit/400Regular/Outfit_400Regular.ttf'),
+    'Outfit_500Medium': require('@expo-google-fonts/outfit/500Medium/Outfit_500Medium.ttf'),
+    'Outfit_600SemiBold': require('@expo-google-fonts/outfit/600SemiBold/Outfit_600SemiBold.ttf'),
+    'Outfit_700Bold': require('@expo-google-fonts/outfit/700Bold/Outfit_700Bold.ttf'),
+    'Outfit_800ExtraBold': require('@expo-google-fonts/outfit/800ExtraBold/Outfit_800ExtraBold.ttf'),
+    // Fraunces (serif)
+    'Fraunces_400Regular': require('@expo-google-fonts/fraunces/400Regular/Fraunces_400Regular.ttf'),
+    'Fraunces_400Regular_Italic': require('@expo-google-fonts/fraunces/400Regular_Italic/Fraunces_400Regular_Italic.ttf'),
+    'Fraunces_700Bold': require('@expo-google-fonts/fraunces/700Bold/Fraunces_700Bold.ttf'),
+    'Fraunces_700Bold_Italic': require('@expo-google-fonts/fraunces/700Bold_Italic/Fraunces_700Bold_Italic.ttf'),
+    // JetBrains Mono (mono)
+    'JetBrainsMono_400Regular': require('@expo-google-fonts/jetbrains-mono/400Regular/JetBrainsMono_400Regular.ttf'),
+    'JetBrainsMono_500Medium': require('@expo-google-fonts/jetbrains-mono/500Medium/JetBrainsMono_500Medium.ttf'),
+    'JetBrainsMono_700Bold': require('@expo-google-fonts/jetbrains-mono/700Bold/JetBrainsMono_700Bold.ttf'),
   });
 
   if (!fontsLoaded) {
