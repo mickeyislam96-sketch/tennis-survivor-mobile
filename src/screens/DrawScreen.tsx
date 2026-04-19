@@ -9,7 +9,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 import EmptyState from '../components/EmptyState';
 // Badge no longer used in this screen
-import { colours, spacing, borderRadius, shadows } from '../theme';
+import { colours, spacing, borderRadius, shadows, fonts } from '../theme';
 import { ROUND_LABELS, ROUND_ORDER } from '../utils/constants';
 
 interface Section {
@@ -720,7 +720,7 @@ function MatchDetailModal({ match, onClose }: MatchDetailModalProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colours.background,
+    backgroundColor: colours.canvas,
   },
 
   // TABS
@@ -741,8 +741,10 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontSize: 14,
+    fontFamily: fonts.monoMedium,
     fontWeight: '400',
     color: colours.textMuted,
+    textTransform: 'uppercase',
   },
   tabTextActive: {
     color: colours.primary,
@@ -759,6 +761,7 @@ const styles = StyleSheet.create({
   },
   roundSummaryText: {
     fontSize: 12.5,
+    fontFamily: fonts.sansRegular,
     fontWeight: '500',
     color: colours.textMuted,
   },
@@ -793,10 +796,11 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#ef4444',
+    backgroundColor: colours.red500,
   },
   liveIndicatorText: {
     fontSize: 10.5,
+    fontFamily: fonts.monoMedium,
     fontWeight: '700',
     color: colours.red500,
     letterSpacing: 0.8,
@@ -818,6 +822,7 @@ const styles = StyleSheet.create({
   },
   seedBadge: {
     fontSize: 10,
+    fontFamily: fonts.monoBold,
     fontWeight: '700',
     color: colours.primary,
     backgroundColor: colours.primaryLight,
@@ -831,6 +836,7 @@ const styles = StyleSheet.create({
   playerName: {
     flex: 1,
     fontSize: 14,
+    fontFamily: fonts.sansMedium,
     color: colours.gray700,
   },
   playerWinner: {
@@ -842,12 +848,14 @@ const styles = StyleSheet.create({
   },
   winTick: {
     fontSize: 14,
+    fontFamily: fonts.monoBold,
     fontWeight: '700',
     color: colours.green700,
     marginRight: 6,
   },
   score: {
     fontSize: 12.5,
+    fontFamily: fonts.monoRegular,
     fontWeight: '600',
     color: colours.gray500,
     marginLeft: spacing.sm,
@@ -874,15 +882,17 @@ const styles = StyleSheet.create({
   },
   dateText: {
     fontSize: 11.5,
+    fontFamily: fonts.sansRegular,
     color: colours.gray400,
   },
   statusBadge: {
     paddingVertical: 2,
     paddingHorizontal: 8,
-    borderRadius: borderRadius.full,
+    borderRadius: borderRadius.pill,
   },
   statusBadgeText: {
     fontSize: 10,
+    fontFamily: fonts.monoMedium,
     fontWeight: '600',
     letterSpacing: 0.5,
     textTransform: 'uppercase',
@@ -898,6 +908,7 @@ const styles = StyleSheet.create({
   },
   nextRoundText: {
     fontSize: 11,
+    fontFamily: fonts.sansRegular,
     fontWeight: '500',
     color: colours.blue700,
   },
@@ -916,6 +927,7 @@ const styles = StyleSheet.create({
   },
   drawUnavailableTitle: {
     fontSize: 22,
+    fontFamily: fonts.sansBold,
     fontWeight: '700' as const,
     color: colours.text,
     textAlign: 'center',
@@ -923,6 +935,7 @@ const styles = StyleSheet.create({
   },
   drawUnavailableMessage: {
     fontSize: 15,
+    fontFamily: fonts.sansRegular,
     color: colours.textMuted,
     textAlign: 'center',
     lineHeight: 22,
@@ -945,6 +958,7 @@ const styles = StyleSheet.create({
   drawUnavailableCardText: {
     flex: 1,
     fontSize: 13,
+    fontFamily: fonts.sansMedium,
     fontWeight: '500' as const,
     color: colours.blue700,
     lineHeight: 18,
@@ -958,6 +972,7 @@ const styles = StyleSheet.create({
   },
   autoUpdateText: {
     fontSize: 12,
+    fontFamily: fonts.sansRegular,
     color: colours.textMuted,
     fontStyle: 'italic',
   },
@@ -969,7 +984,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalSheet: {
-    backgroundColor: colours.surface,
+    backgroundColor: colours.canvas,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingHorizontal: spacing.lg,
@@ -995,11 +1010,13 @@ const styles = StyleSheet.create({
   },
   muHeaderTitle: {
     fontSize: 18,
+    fontFamily: fonts.serifBold,
     fontWeight: '700',
     color: colours.text,
   },
   muHeaderClose: {
     fontSize: 28,
+    fontFamily: fonts.sansRegular,
     fontWeight: '300',
     color: colours.textMuted,
     lineHeight: 28,
@@ -1013,11 +1030,13 @@ const styles = StyleSheet.create({
   },
   muLoadingText: {
     fontSize: 14,
+    fontFamily: fonts.sansRegular,
     color: colours.textMuted,
     marginTop: spacing.md,
   },
   muErrorText: {
     fontSize: 14,
+    fontFamily: fonts.sansRegular,
     color: colours.textMuted,
     textAlign: 'center',
   },
@@ -1034,6 +1053,7 @@ const styles = StyleSheet.create({
   },
   muPlayerName: {
     fontSize: 15,
+    fontFamily: fonts.sansMedium,
     fontWeight: '700',
     color: colours.text,
     textAlign: 'center',
@@ -1041,6 +1061,7 @@ const styles = StyleSheet.create({
   },
   muPlayerMeta: {
     fontSize: 12,
+    fontFamily: fonts.sansRegular,
     color: colours.textMuted,
     textAlign: 'center',
   },
@@ -1052,6 +1073,7 @@ const styles = StyleSheet.create({
   },
   muVsLabel: {
     fontSize: 10,
+    fontFamily: fonts.monoMedium,
     fontWeight: '600',
     color: colours.textMuted,
     textTransform: 'uppercase',
@@ -1064,6 +1086,7 @@ const styles = StyleSheet.create({
   },
   muVsNum: {
     fontSize: 24,
+    fontFamily: fonts.monoBold,
     fontWeight: '400',
     color: colours.text,
   },
@@ -1072,6 +1095,7 @@ const styles = StyleSheet.create({
   },
   muVsDivider: {
     fontSize: 20,
+    fontFamily: fonts.monoRegular,
     color: colours.textMuted,
   },
 
@@ -1081,6 +1105,7 @@ const styles = StyleSheet.create({
   },
   muSectionTitle: {
     fontSize: 12,
+    fontFamily: fonts.monoMedium,
     fontWeight: '700',
     color: colours.textMuted,
     textTransform: 'uppercase',
@@ -1103,6 +1128,7 @@ const styles = StyleSheet.create({
   },
   muStatLabel: {
     fontSize: 11,
+    fontFamily: fonts.monoMedium,
     fontWeight: '600',
     color: colours.textMuted,
     textTransform: 'uppercase',
@@ -1119,6 +1145,7 @@ const styles = StyleSheet.create({
   },
   muStatNum: {
     fontSize: 18,
+    fontFamily: fonts.monoBold,
     fontWeight: '600',
     color: colours.text,
   },
@@ -1130,6 +1157,7 @@ const styles = StyleSheet.create({
   },
   muStatSub: {
     fontSize: 11,
+    fontFamily: fonts.monoMedium,
     color: colours.textMuted,
     marginTop: 2,
   },
@@ -1141,6 +1169,7 @@ const styles = StyleSheet.create({
   muFormCol: {},
   muFormHeader: {
     fontSize: 14,
+    fontFamily: fonts.sansMedium,
     fontWeight: '700',
     color: colours.text,
     marginBottom: spacing.sm,
@@ -1168,6 +1197,7 @@ const styles = StyleSheet.create({
   },
   muWlText: {
     fontSize: 11,
+    fontFamily: fonts.monoBold,
     fontWeight: '700',
   },
   muWlTextW: {
@@ -1182,15 +1212,18 @@ const styles = StyleSheet.create({
   },
   muFormOpp: {
     fontSize: 13,
+    fontFamily: fonts.sansMedium,
     fontWeight: '600',
     color: colours.text,
   },
   muFormEvent: {
     fontSize: 11,
+    fontFamily: fonts.sansRegular,
     color: colours.textMuted,
   },
   muFormScore: {
     fontSize: 12,
+    fontFamily: fonts.monoRegular,
     fontWeight: '500',
     color: colours.textSecondary,
     textAlign: 'right',
@@ -1199,6 +1232,7 @@ const styles = StyleSheet.create({
   // Footer
   muFooter: {
     fontSize: 11,
+    fontFamily: fonts.sansRegular,
     color: colours.textMuted,
     textAlign: 'center',
     marginTop: spacing.sm,
@@ -1208,13 +1242,14 @@ const styles = StyleSheet.create({
   // Close button
   modalClose: {
     backgroundColor: colours.gray100,
-    borderRadius: borderRadius.sm,
+    borderRadius: borderRadius.pill,
     paddingVertical: 14,
     alignItems: 'center',
     marginTop: spacing.sm,
   },
   modalCloseText: {
     fontSize: 15,
+    fontFamily: fonts.sansMedium,
     fontWeight: '600',
     color: colours.text,
   },

@@ -1,14 +1,33 @@
 import React from 'react';
-import { StatusBar } from 'react-native';
+import { StatusBar, View, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { AuthStack } from './AuthStack';
 import { MainTabs } from './MainTabs';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { colours } from '../theme';
+import { colours, fonts } from '../theme';
 import * as Linking from 'expo-linking';
 import { useNotifications } from '../hooks/useNotifications';
+import { useFonts } from 'expo-font';
+import {
+  Outfit_400Regular,
+  Outfit_500Medium,
+  Outfit_600SemiBold,
+  Outfit_700Bold,
+  Outfit_800ExtraBold,
+} from '@expo-google-fonts/outfit';
+import {
+  Fraunces_400Regular,
+  Fraunces_400Regular_Italic,
+  Fraunces_700Bold,
+  Fraunces_700Bold_Italic,
+} from '@expo-google-fonts/fraunces';
+import {
+  JetBrainsMono_400Regular,
+  JetBrainsMono_500Medium,
+  JetBrainsMono_700Bold,
+} from '@expo-google-fonts/jetbrains-mono';
 
 // Deep linking configuration
 const linking = {
@@ -47,17 +66,17 @@ function AppNavigator() {
         dark: false,
         colors: {
           primary: colours.primary,
-          background: colours.background,
+          background: colours.canvas,
           card: colours.surface,
-          text: colours.text,
+          text: colours.ink,
           border: colours.border,
           notification: colours.danger,
         },
         fonts: {
-          regular: { fontFamily: 'System', fontWeight: '400' },
-          medium: { fontFamily: 'System', fontWeight: '500' },
-          bold: { fontFamily: 'System', fontWeight: '700' },
-          heavy: { fontFamily: 'System', fontWeight: '800' },
+          regular: { fontFamily: fonts.sansRegular, fontWeight: '400' },
+          medium: { fontFamily: fonts.sansMedium, fontWeight: '500' },
+          bold: { fontFamily: fonts.sansBold, fontWeight: '700' },
+          heavy: { fontFamily: fonts.sansExtraBold, fontWeight: '800' },
         },
       }}
     >
@@ -67,9 +86,32 @@ function AppNavigator() {
 }
 
 export default function App() {
+  const [fontsLoaded] = useFonts({
+    Outfit_400Regular,
+    Outfit_500Medium,
+    Outfit_600SemiBold,
+    Outfit_700Bold,
+    Outfit_800ExtraBold,
+    Fraunces_400Regular,
+    Fraunces_400Regular_Italic,
+    Fraunces_700Bold,
+    Fraunces_700Bold_Italic,
+    JetBrainsMono_400Regular,
+    JetBrainsMono_500Medium,
+    JetBrainsMono_700Bold,
+  });
+
+  if (!fontsLoaded) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colours.canvas }}>
+        <ActivityIndicator size="large" color={colours.primary} />
+      </View>
+    );
+  }
+
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: colours.background }}>
-      <StatusBar barStyle="dark-content" backgroundColor={colours.background} />
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: colours.canvas }}>
+      <StatusBar barStyle="dark-content" backgroundColor={colours.canvas} />
       <AuthProvider>
         <AppNavigator />
       </AuthProvider>

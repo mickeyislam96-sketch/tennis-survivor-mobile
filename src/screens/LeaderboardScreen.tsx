@@ -22,7 +22,7 @@ import { getUserPickHistory, Pick as PickType } from '../api/picks';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 import EmptyState from '../components/EmptyState';
-import { colours, spacing, borderRadius, shadows, AVATAR_COLOURS } from '../theme';
+import { colours, spacing, borderRadius, shadows, AVATAR_COLOURS, fonts } from '../theme';
 import { ROUND_LABELS, ROUND_ORDER } from '../utils/constants';
 
 type RootStackParamList = {
@@ -225,7 +225,7 @@ function LeaderboardRow({
     .toUpperCase()
     .slice(0, 2);
 
-  const rowBg = isCurrentUser ? colours.green50 : colours.white;
+  const rowBg = isCurrentUser ? colours.primarySoft : colours.white;
 
   return (
     <TouchableOpacity
@@ -447,7 +447,7 @@ const screenWidth = Dimensions.get('window').width;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colours.background,
+    backgroundColor: colours.canvas,
   },
   listContent: {
     paddingHorizontal: spacing.md,
@@ -456,7 +456,7 @@ const styles = StyleSheet.create({
 
   // WINNER BANNER
   winnerBanner: {
-    backgroundColor: colours.primarySuperDark,
+    backgroundColor: colours.primary,
     paddingVertical: spacing.xl,
     paddingHorizontal: spacing.lg,
     alignItems: 'center',
@@ -472,26 +472,30 @@ const styles = StyleSheet.create({
   winnerEyebrow: {
     fontSize: 11,
     fontWeight: '700',
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: colours.goldDeep,
     textTransform: 'uppercase',
     letterSpacing: 1.5,
     marginBottom: spacing.xs,
+    fontFamily: fonts.monoMedium,
   },
   winnerName: {
     fontSize: 24,
     fontWeight: '800',
-    color: colours.white,
+    color: colours.gold,
     marginBottom: spacing.xs,
+    fontFamily: fonts.sansBold,
   },
   winnerSubtitle: {
     fontSize: 14,
     color: 'rgba(255, 255, 255, 0.7)',
+    fontFamily: fonts.sansRegular,
   },
   winnerPrize: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#fbbf24',
+    color: colours.gold,
     marginTop: spacing.sm,
+    fontFamily: fonts.sansMedium,
   },
 
   // GROUP NAME
@@ -500,6 +504,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colours.text,
     marginBottom: spacing.md,
+    fontFamily: fonts.serifBold,
   },
 
   // STATS CARD
@@ -543,14 +548,16 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
     lineHeight: 26,
     color: colours.text,
+    fontFamily: fonts.monoBold,
   },
   statLabel: {
     fontSize: 11,
     fontWeight: '600',
     color: colours.textMuted,
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    letterSpacing: 1.2,
     marginTop: 4,
+    fontFamily: fonts.monoMedium,
   },
 
   // TAP HINT
@@ -559,6 +566,7 @@ const styles = StyleSheet.create({
     color: colours.textMuted,
     textAlign: 'center',
     marginBottom: spacing.md,
+    fontFamily: fonts.sansRegular,
   },
 
   // TABLE HEADER
@@ -578,7 +586,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colours.textMuted,
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    letterSpacing: 1.2,
+    fontFamily: fonts.monoMedium,
   },
 
   // TABLE ROW
@@ -596,6 +605,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: colours.textMuted,
+    fontFamily: fonts.monoBold,
   },
   playerCell: {
     flex: 1,
@@ -614,6 +624,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     color: colours.white,
+    fontFamily: fonts.sansBold,
   },
   playerInfo: {
     flex: 1,
@@ -623,13 +634,15 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
     color: colours.text,
+    fontFamily: fonts.sansMedium,
   },
   youBadge: {
     fontSize: 9,
     fontWeight: '700',
-    color: colours.success,
+    color: colours.primary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    fontFamily: fonts.monoBold,
   },
   statusCell: {
     width: 60,
@@ -650,11 +663,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: colours.success,
+    fontFamily: fonts.sansMedium,
   },
   statusEliminated: {
     fontSize: 11,
     fontWeight: '500',
     color: colours.textMuted,
+    fontFamily: fonts.sansRegular,
   },
   survivedCell: {
     width: 65,
@@ -665,6 +680,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
     lineHeight: 13,
+    fontFamily: fonts.monoMedium,
   },
   pickCell: {
     width: 75,
@@ -673,15 +689,18 @@ const styles = StyleSheet.create({
   hiddenPickText: {
     fontSize: 11,
     color: colours.textMuted,
+    fontFamily: fonts.sansRegular,
   },
   pickText: {
     fontSize: 11,
     fontWeight: '500',
+    fontFamily: fonts.sansMedium,
   },
   noPickText: {
     fontSize: 14,
     fontWeight: '500',
     color: colours.textMuted,
+    fontFamily: fonts.sansRegular,
   },
 
   // MODAL
@@ -724,6 +743,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: colours.white,
+    fontFamily: fonts.sansBold,
   },
   modalHeaderInfo: {
     flex: 1,
@@ -733,10 +753,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colours.text,
     marginBottom: 2,
+    fontFamily: fonts.sansBold,
   },
   modalStatus: {
     fontSize: 13,
     fontWeight: '500',
+    fontFamily: fonts.sansRegular,
   },
   modalSection: {
     marginBottom: spacing.lg,
@@ -746,8 +768,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colours.textMuted,
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    letterSpacing: 1.2,
     marginBottom: spacing.sm,
+    fontFamily: fonts.monoMedium,
   },
   modalPickHidden: {
     backgroundColor: colours.gray50,
@@ -758,6 +781,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colours.textMuted,
     textAlign: 'center',
+    fontFamily: fonts.sansRegular,
   },
   modalPickCard: {
     backgroundColor: colours.gray50,
@@ -770,15 +794,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colours.text,
     marginBottom: 4,
+    fontFamily: fonts.sansMedium,
   },
   modalPickResult: {
     fontSize: 13,
     fontWeight: '600',
+    fontFamily: fonts.sansMedium,
   },
   modalNoPick: {
     fontSize: 13,
     color: colours.textMuted,
     fontStyle: 'italic',
+    fontFamily: fonts.sansRegular,
   },
   modalStatsRow: {
     flexDirection: 'row',
@@ -797,11 +824,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colours.text,
     marginBottom: 2,
+    fontFamily: fonts.monoBold,
   },
   modalStatLabel: {
     fontSize: 11,
     fontWeight: '500',
     color: colours.textMuted,
+    fontFamily: fonts.monoMedium,
   },
   // Pick history table
   historyTable: {
@@ -823,7 +852,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colours.textMuted,
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    letterSpacing: 1.2,
+    fontFamily: fonts.monoMedium,
   },
   historyRow: {
     flexDirection: 'row',
@@ -840,14 +870,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colours.textMuted,
     fontWeight: '500',
+    fontFamily: fonts.sansRegular,
   },
   historyCellPlayer: {
     color: colours.text,
     fontWeight: '600',
+    fontFamily: fonts.sansMedium,
   },
   historyResult: {
     fontSize: 11,
     fontWeight: '600',
+    fontFamily: fonts.sansMedium,
   },
 
   modalClose: {
@@ -860,6 +893,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: colours.text,
+    fontFamily: fonts.sansMedium,
   },
 });
 

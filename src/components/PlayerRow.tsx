@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { colours, spacing, borderRadius } from '../theme';
+import { colours, spacing, borderRadius, fonts } from '../theme';
 import Badge from './Badge';
 
 interface PlayerRowProps {
@@ -25,8 +25,8 @@ const PlayerRow: React.FC<PlayerRowProps> = ({
   disabled = false,
 }) => {
   const opacity = isUsed ? 0.45 : 1;
-  const borderColor = isSelected ? '#86efac' : colours.border;
-  const bgColor = isCurrentPick ? '#f0fdf4' : colours.surface;
+  const borderColor = isSelected ? colours.primary : colours.border;
+  const bgColor = isCurrentPick ? colours.primarySoft : colours.surface;
 
   return (
     <TouchableOpacity
@@ -42,17 +42,15 @@ const PlayerRow: React.FC<PlayerRowProps> = ({
       disabled={disabled}
       activeOpacity={0.7}
     >
-      <View style={styles.left}>
-        <View style={styles.nameRow}>
-          <Text style={[styles.name, isCurrentPick && styles.nameCurrentPick]}>
-            {player.name}
-          </Text>
-          {player.seed && (
-            <View style={styles.seedBadge}>
-              <Text style={styles.seedText}>{player.seed}</Text>
-            </View>
-          )}
-        </View>
+      {/* Seed rank */}
+      {player.seed && (
+        <Text style={styles.seedText}>{player.seed}</Text>
+      )}
+
+      <View style={styles.body}>
+        <Text style={[styles.name, isCurrentPick && styles.nameCurrentPick]}>
+          {player.name}
+        </Text>
         {(player.opponentName || player.opponent) && (
           <Text style={styles.opponentText}>vs {player.opponentName || player.opponent}</Text>
         )}
@@ -95,7 +93,6 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: spacing.md,
     paddingVertical: 12,
     marginHorizontal: spacing.md,
@@ -103,52 +100,43 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: colours.border,
     borderRadius: borderRadius.sm,
-    gap: spacing.md,
+    gap: spacing.sm,
   },
-  left: {
+  seedText: {
+    fontFamily: fonts.monoBold,
+    fontSize: 13,
+    color: colours.inkMuted,
+    width: 24,
+    textAlign: 'center',
+  },
+  body: {
     flex: 1,
-  },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
   },
   name: {
     fontSize: 15,
-    fontWeight: '500' as const,
-    color: colours.text,
+    fontFamily: fonts.sansMedium,
+    color: colours.ink,
   },
   nameCurrentPick: {
-    color: '#15803d',
-  },
-  seedBadge: {
-    backgroundColor: '#f0fdf4',
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: borderRadius.xs,
-    borderLeftWidth: 1,
-    borderLeftColor: '#d1fae5',
-  },
-  seedText: {
-    fontWeight: '700' as const,
-    color: '#15803d',
-    fontSize: 13,
+    color: colours.primary,
   },
   opponentText: {
     fontSize: 12,
-    color: colours.textMuted,
+    fontFamily: fonts.sansRegular,
+    color: colours.inkSoft,
     marginTop: 2,
   },
   pendingText: {
     fontSize: 12,
+    fontFamily: fonts.sansMedium,
     color: colours.warning,
-    fontWeight: '500' as const,
     marginTop: 2,
   },
   usedText: {
     fontSize: 12,
-    color: colours.textMuted,
-    fontStyle: 'italic' as const,
+    fontFamily: fonts.sansRegular,
+    color: colours.inkSoft,
+    fontStyle: 'italic',
     marginTop: 2,
   },
   right: {
@@ -156,27 +144,25 @@ const styles = StyleSheet.create({
   },
   pickButton: {
     backgroundColor: colours.primary,
-    color: colours.white,
     paddingVertical: 6,
     paddingHorizontal: 16,
-    borderRadius: borderRadius.full,
+    borderRadius: borderRadius.pill,
   },
   pickButtonText: {
-    fontWeight: '600' as const,
+    fontFamily: fonts.sansSemiBold,
     fontSize: 13,
-    color: colours.white,
+    color: colours.primaryInk,
   },
   currentPickBadge: {
-    color: '#15803d',
-    backgroundColor: '#dcfce7',
-    borderRadius: borderRadius.full,
+    backgroundColor: colours.primarySoft,
+    borderRadius: borderRadius.pill,
     paddingVertical: 3,
     paddingHorizontal: 10,
   },
   currentPickText: {
     fontSize: 11,
-    fontWeight: '600' as const,
-    color: '#15803d',
+    fontFamily: fonts.sansSemiBold,
+    color: colours.primary,
   },
 });
 

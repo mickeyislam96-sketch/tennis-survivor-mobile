@@ -19,7 +19,7 @@ import PoolCard from '../components/PoolCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 import EmptyState from '../components/EmptyState';
-import { colours, spacing, borderRadius, shadows } from '../theme';
+import { colours, spacing, borderRadius, shadows, fonts } from '../theme';
 import { useCountdown } from '../hooks/useCountdown';
 
 type RootStackParamList = {
@@ -83,8 +83,8 @@ export function PoolsScreen({ navigation }: Props) {
   const featuredPoolName = useMemo(() => {
     if (!featuredPool) return '';
     const name = featuredPool.name || featuredPool.tournament?.name || '';
-    // Extract short name: "Rolex Monte-Carlo Masters 2026" -> "Monte Carlo"
     if (name.toLowerCase().includes('monte')) return 'Monte Carlo';
+    if (name.toLowerCase().includes('madrid')) return 'Madrid';
     return name.split(' ').slice(0, 2).join(' ');
   }, [featuredPool]);
 
@@ -165,16 +165,19 @@ export function PoolsScreen({ navigation }: Props) {
         keyExtractor={(item) => item.id}
         ListHeaderComponent={
           <>
-            {/* Green hero banner */}
+            {/* Deep emerald hero */}
             <View style={styles.heroBanner}>
-              <View style={styles.heroOverlay} />
               <Text style={styles.eyebrow}>TENNIS SURVIVOR POOL</Text>
-              <Text style={styles.heroTitle}>Final Serve-ivor</Text>
+              <Text style={styles.heroTitle}>
+                Pick a winner.{'\n'}
+                <Text style={styles.heroTitleItalic}>Outlast everyone.</Text>
+              </Text>
               <Text style={styles.heroSubtitle}>
-                Pick one player per round. If they lose, you{'\u2019'}re out.{'\n'}Last one standing takes the entire prize pool.
+                Each round, pick one tennis player to win. If they lose, you{'\u2019'}re out.
+                Last one standing takes the entire prize pool.
               </Text>
 
-              {/* Hero CTA button */}
+              {/* Hero CTA button — pill shaped */}
               {featuredPool && (
                 <TouchableOpacity
                   style={styles.heroCta}
@@ -197,6 +200,30 @@ export function PoolsScreen({ navigation }: Props) {
                   </Text>
                 </View>
               )}
+
+              {/* Hero stats row */}
+              <View style={styles.heroStats}>
+                <View style={styles.heroStatItem}>
+                  <Text style={styles.heroStatValue}>
+                    {upcomingRegisteredCount > 0 ? upcomingRegisteredCount : pools?.length || 0}
+                  </Text>
+                  <Text style={styles.heroStatLabel}>
+                    {upcomingRegisteredCount > 0 ? 'REGISTERED' : 'POOLS'}
+                  </Text>
+                </View>
+                <View style={styles.heroStatItem}>
+                  <Text style={styles.heroStatValue}>Free</Text>
+                  <Text style={styles.heroStatLabel}>ENTRY</Text>
+                </View>
+                {featuredStartDate && (
+                  <View style={styles.heroStatItem}>
+                    <Text style={styles.heroStatValue}>
+                      {new Date(featuredStartDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                    </Text>
+                    <Text style={styles.heroStatLabel}>STARTS</Text>
+                  </View>
+                )}
+              </View>
             </View>
 
             {/* How it works */}
@@ -209,7 +236,7 @@ export function PoolsScreen({ navigation }: Props) {
                   </View>
                   <Text style={styles.stepLabel}>Enter a pool</Text>
                   <Text style={styles.stepDescription}>
-                    Join an open tournament pool, or use a friend{'\u2019'}s invite code to enter their private group.
+                    Join an open tournament pool, or use a friend{'\u2019'}s invite code.
                   </Text>
                 </View>
                 <View style={styles.stepCard}>
@@ -218,16 +245,16 @@ export function PoolsScreen({ navigation }: Props) {
                   </View>
                   <Text style={styles.stepLabel}>Pick one player</Text>
                   <Text style={styles.stepDescription}>
-                    Each round, pick one player you think will win. Choose wisely: you can never pick the same player twice.
+                    Each round, pick one player to win. Never pick the same player twice.
                   </Text>
                 </View>
                 <View style={styles.stepCard}>
                   <View style={styles.stepNumber}>
                     <Text style={styles.stepNumberText}>3</Text>
                   </View>
-                  <Text style={styles.stepLabel}>Last one standing wins</Text>
+                  <Text style={styles.stepLabel}>Last one standing</Text>
                   <Text style={styles.stepDescription}>
-                    If your player loses, you{'\u2019'}re eliminated. Outlast every other player in your pool and take the entire prize pool.
+                    If your player loses, you{'\u2019'}re out. Outlast everyone to win.
                   </Text>
                 </View>
               </View>
@@ -246,7 +273,6 @@ export function PoolsScreen({ navigation }: Props) {
           </View>
         )}
         renderSectionFooter={({ section }) => {
-          // Show social proof banner after upcoming pools section
           if (section.title === 'Coming soon' && upcomingRegisteredCount > 0) {
             return (
               <View style={styles.socialProof}>
@@ -274,8 +300,8 @@ export function PoolsScreen({ navigation }: Props) {
               <View style={styles.inviteRow}>
                 <TextInput
                   style={styles.inviteInput}
-                  placeholder="e.g. MONTECAR-406R3X"
-                  placeholderTextColor={colours.gray400}
+                  placeholder="e.g. MADRID-4X7K2P"
+                  placeholderTextColor={colours.inkGhost}
                   value={inviteCode}
                   onChangeText={(t) => { setInviteCode(t); setInviteError(null); }}
                   autoCapitalize="characters"
@@ -289,7 +315,7 @@ export function PoolsScreen({ navigation }: Props) {
                   disabled={!inviteCode.trim() || inviteLoading}
                 >
                   {inviteLoading ? (
-                    <ActivityIndicator size="small" color={colours.white} />
+                    <ActivityIndicator size="small" color={colours.primaryInk} />
                   ) : (
                     <Text style={styles.inviteButtonText}>Join</Text>
                   )}
@@ -329,8 +355,10 @@ export function PoolsScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colours.background,
+    backgroundColor: colours.canvas,
   },
+
+  // ── Hero (deep emerald) ──
   heroBanner: {
     backgroundColor: colours.primary,
     paddingTop: spacing.xl,
@@ -339,83 +367,92 @@ const styles = StyleSheet.create({
     position: 'relative',
     overflow: 'hidden',
   },
-  heroOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: '#ffffff',
-    opacity: 0.08,
-  },
   eyebrow: {
+    fontFamily: fonts.monoMedium,
     fontSize: 11,
-    fontWeight: '700',
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: 'rgba(255, 255, 255, 0.6)',
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: 1.2,
     marginBottom: spacing.sm,
-    position: 'relative',
-    zIndex: 1,
   },
   heroTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: colours.white,
+    fontFamily: fonts.serifBold,
+    fontSize: 36,
+    color: colours.primaryInk,
     letterSpacing: -0.5,
+    lineHeight: 38,
     marginBottom: spacing.sm,
-    position: 'relative',
-    zIndex: 1,
+  },
+  heroTitleItalic: {
+    fontFamily: fonts.serifBoldItalic,
+    color: colours.gold,
   },
   heroSubtitle: {
+    fontFamily: fonts.sansRegular,
     fontSize: 15,
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: 'rgba(255, 255, 255, 0.75)',
     lineHeight: 22,
-    position: 'relative',
-    zIndex: 1,
   },
   heroCta: {
-    backgroundColor: colours.white,
-    borderRadius: borderRadius.sm,
+    backgroundColor: colours.primaryInk,
+    borderRadius: borderRadius.pill,
     paddingVertical: 12,
     paddingHorizontal: spacing.lg,
     alignSelf: 'flex-start',
     marginTop: spacing.md,
-    position: 'relative',
-    zIndex: 1,
   },
   heroCtaText: {
+    fontFamily: fonts.sansBold,
     fontSize: 14,
-    fontWeight: '700',
     color: colours.primary,
     letterSpacing: -0.2,
   },
   heroCountdownBadge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    borderRadius: borderRadius.full,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    borderRadius: borderRadius.pill,
     paddingVertical: 6,
     paddingHorizontal: 14,
     alignSelf: 'flex-start',
     marginTop: spacing.sm,
-    position: 'relative',
-    zIndex: 1,
   },
   heroCountdownText: {
+    fontFamily: fonts.sansSemiBold,
     fontSize: 13,
     color: 'rgba(255, 255, 255, 0.9)',
-    fontWeight: '600',
+  },
+  heroStats: {
+    flexDirection: 'row',
+    gap: 20,
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  heroStatItem: {
+    gap: 2,
+  },
+  heroStatValue: {
+    fontFamily: fonts.monoBold,
+    fontSize: 18,
+    color: colours.primaryInk,
+  },
+  heroStatLabel: {
+    fontFamily: fonts.monoMedium,
+    fontSize: 9,
+    color: 'rgba(255, 255, 255, 0.5)',
+    letterSpacing: 1,
   },
 
-  // How it works
+  // ── How it works ──
   howSection: {
     paddingHorizontal: spacing.md,
     paddingTop: spacing.lg,
     paddingBottom: spacing.sm,
   },
   howTitle: {
+    fontFamily: fonts.sansBold,
     fontSize: 18,
-    fontWeight: '700',
-    color: colours.text,
+    color: colours.ink,
     marginBottom: spacing.md,
   },
   stepsRow: {
@@ -435,31 +472,32 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: colours.primaryLight,
+    backgroundColor: colours.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.sm,
   },
   stepNumberText: {
+    fontFamily: fonts.monoBold,
     fontSize: 13,
-    fontWeight: '700',
     color: colours.primary,
   },
   stepLabel: {
+    fontFamily: fonts.sansBold,
     fontSize: 13,
-    fontWeight: '700',
-    color: colours.text,
+    color: colours.ink,
     textAlign: 'center',
     marginBottom: 4,
   },
   stepDescription: {
+    fontFamily: fonts.sansRegular,
     fontSize: 11,
-    color: colours.textMuted,
+    color: colours.inkSoft,
     textAlign: 'center',
     lineHeight: 15,
   },
 
-  // Sections
+  // ── Sections ──
   sectionHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -475,12 +513,12 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   sectionHeader: {
+    fontFamily: fonts.sansBold,
     fontSize: 18,
-    fontWeight: '700',
-    color: colours.text,
+    color: colours.ink,
   },
   socialProof: {
-    backgroundColor: colours.primaryLight,
+    backgroundColor: colours.primarySoft,
     borderRadius: borderRadius.sm,
     paddingVertical: 10,
     paddingHorizontal: spacing.md,
@@ -489,9 +527,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   socialProofText: {
+    fontFamily: fonts.sansSemiBold,
     fontSize: 13,
-    fontWeight: '600',
-    color: colours.primaryDark,
+    color: colours.primary,
   },
   cardContainer: {
     paddingHorizontal: spacing.md,
@@ -500,25 +538,26 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
   },
 
-  // Invite code section
+  // ── Invite code ──
   inviteSection: {
     marginHorizontal: spacing.md,
     marginTop: spacing.xl,
     padding: spacing.lg,
     backgroundColor: colours.surface,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.lg,
     borderWidth: 1,
     borderColor: colours.border,
   },
   inviteSectionTitle: {
+    fontFamily: fonts.sansBold,
     fontSize: 15,
-    fontWeight: '700',
-    color: colours.text,
+    color: colours.ink,
     marginBottom: spacing.xs,
   },
   inviteSubtitle: {
+    fontFamily: fonts.sansRegular,
     fontSize: 13,
-    color: colours.textMuted,
+    color: colours.inkSoft,
     marginBottom: spacing.md,
   },
   inviteRow: {
@@ -532,16 +571,16 @@ const styles = StyleSheet.create({
     borderColor: colours.border,
     borderRadius: borderRadius.sm,
     paddingHorizontal: spacing.md,
+    fontFamily: fonts.monoRegular,
     fontSize: 14,
-    fontWeight: '500',
-    color: colours.text,
-    backgroundColor: colours.background,
+    color: colours.ink,
+    backgroundColor: colours.surfaceMuted,
   },
   inviteButton: {
     height: 44,
     paddingHorizontal: spacing.lg,
     backgroundColor: colours.primary,
-    borderRadius: borderRadius.sm,
+    borderRadius: borderRadius.pill,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -549,17 +588,18 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   inviteButtonText: {
+    fontFamily: fonts.sansBold,
     fontSize: 14,
-    fontWeight: '700',
-    color: colours.white,
+    color: colours.primaryInk,
   },
   inviteError: {
+    fontFamily: fonts.sansRegular,
     fontSize: 12,
     color: colours.danger,
     marginTop: spacing.xs,
   },
 
-  // Footer
+  // ── Footer ──
   footer: {
     alignItems: 'center',
     paddingVertical: spacing.xl,
@@ -567,14 +607,15 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   footerLink: {
+    fontFamily: fonts.sansSemiBold,
     fontSize: 13,
-    fontWeight: '600',
     color: colours.primary,
     marginBottom: spacing.xs,
   },
   footerCopy: {
+    fontFamily: fonts.sansRegular,
     fontSize: 12,
-    color: colours.textMuted,
+    color: colours.inkSoft,
   },
 });
 

@@ -12,7 +12,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
 import { getMyPools } from '../api/auth';
 import { getPickHistory } from '../api/picks';
-import { colours, spacing, borderRadius } from '../theme';
+import { colours, spacing, borderRadius, fonts } from '../theme';
 import { ROUND_LABELS, ROUND_ORDER } from '../utils/constants';
 import LoadingSpinner from '../components/LoadingSpinner';
 import EmptyState from '../components/EmptyState';
@@ -158,11 +158,12 @@ export default function MyPicksScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colours.background,
+    backgroundColor: colours.canvas,
   },
   header: {
     fontSize: 22,
     fontWeight: '700',
+    fontFamily: fonts.sansBold,
     color: colours.text,
     padding: spacing.md,
   },
@@ -172,6 +173,7 @@ const styles = StyleSheet.create({
   poolName: {
     fontSize: 16,
     fontWeight: '700',
+    fontFamily: fonts.serifBold,
     color: colours.text,
     borderBottomWidth: 1,
     borderBottomColor: colours.border,
@@ -182,13 +184,14 @@ const styles = StyleSheet.create({
   noPicks: {
     color: colours.textMuted,
     fontSize: 14,
+    fontFamily: fonts.sansRegular,
     fontStyle: 'italic',
   },
   pickCard: {
     backgroundColor: colours.surface,
     borderWidth: 1.5,
     borderColor: colours.border,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.lg,
     padding: spacing.md,
     marginBottom: spacing.xs,
   },
@@ -203,6 +206,7 @@ const styles = StyleSheet.create({
   pickRound: {
     fontSize: 11,
     fontWeight: '700',
+    fontFamily: fonts.monoMedium,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     color: colours.textMuted,
@@ -211,6 +215,7 @@ const styles = StyleSheet.create({
   pickPlayer: {
     fontSize: 16,
     fontWeight: '700',
+    fontFamily: fonts.sansMedium,
     color: colours.text,
   },
   statusPill: {
@@ -221,5 +226,6 @@ const styles = StyleSheet.create({
   statusLabel: {
     fontSize: 12,
     fontWeight: '600',
+    fontFamily: fonts.sansSemiBold,
   },
 });

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colours, spacing } from '../theme';
+import { colours, spacing, fonts } from '../theme';
 
 interface StatCardProps {
   label: string;
@@ -9,7 +9,7 @@ interface StatCardProps {
 }
 
 const StatCard: React.FC<StatCardProps> = ({ label, value, color }) => {
-  const valueColor = color || colours.text;
+  const valueColor = color || colours.ink;
 
   return (
     <View style={styles.card}>
@@ -29,16 +29,17 @@ const styles = StyleSheet.create({
   },
   value: {
     fontSize: 22,
-    fontWeight: '800' as const,
+    fontFamily: fonts.monoBold,
     letterSpacing: -0.3,
+    lineHeight: 26,
   },
   label: {
-    fontSize: 11,
-    fontWeight: '600' as const,
-    color: colours.textMuted,
+    fontSize: 10,
+    fontFamily: fonts.monoMedium,
+    color: colours.inkSoft,
     marginTop: 4,
-    textTransform: 'uppercase' as const,
-    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
   },
 });
 

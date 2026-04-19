@@ -14,7 +14,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import * as Haptics from 'expo-haptics';
 
-import { colours, spacing, borderRadius, shadows } from '../theme';
+import { colours, spacing, borderRadius, shadows, fonts } from '../theme';
 import { getAvailablePlayers, submitPick, getPickHistory } from '../api/picks';
 import type { Player as ApiPlayer, Pick as ApiPick } from '../api/picks';
 import { getDeadlines, getRounds, getBracket } from '../api/draw';
@@ -534,7 +534,7 @@ export default function PickScreen({ route }: Props) {
           <TextInput
             style={styles.searchInput}
             placeholder="Search players\u2026"
-            placeholderTextColor={colours.textMuted}
+            placeholderTextColor={colours.inkSoft}
             value={search}
             onChangeText={setSearch}
           />
@@ -596,7 +596,7 @@ export default function PickScreen({ route }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colours.background,
+    backgroundColor: colours.canvas,
     paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
   },
@@ -612,12 +612,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   statusAlive: {
-    backgroundColor: colours.primaryLight,
-    borderColor: colours.successBorder,
+    backgroundColor: colours.primarySoft,
+    borderColor: colours.success,
   },
   statusOut: {
-    backgroundColor: colours.dangerBg,
-    borderColor: colours.dangerBorder,
+    backgroundColor: colours.dangerSoft,
+    borderColor: colours.danger,
   },
   statusDot: {
     width: 8,
@@ -628,6 +628,8 @@ const styles = StyleSheet.create({
   statusLabel: {
     fontSize: 13.5,
     fontWeight: '600',
+    fontFamily: fonts.sansSemiBold,
+    color: colours.ink,
   },
 
   // Round tabs
@@ -637,27 +639,33 @@ const styles = StyleSheet.create({
   tabsContent: {
     flexDirection: 'row',
     gap: 6,
+    backgroundColor: colours.surfaceMuted,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colours.border,
+    padding: 4,
+    paddingHorizontal: spacing.sm,
   },
   tab: {
     paddingVertical: 6,
     paddingHorizontal: 14,
-    borderRadius: borderRadius.full,
-    borderWidth: 1.5,
-    borderColor: colours.border,
-    backgroundColor: colours.surface,
+    borderRadius: borderRadius.sm,
+    borderWidth: 0,
+    backgroundColor: 'transparent',
   },
   tabActive: {
     backgroundColor: colours.primary,
-    borderColor: colours.primary,
   },
   tabText: {
-    fontSize: 13.5,
+    fontSize: 13,
     fontWeight: '500',
-    color: colours.textMuted,
+    fontFamily: fonts.monoMedium,
+    color: colours.inkMuted,
+    textTransform: 'uppercase',
   },
   tabTextActive: {
-    color: colours.white,
-    fontWeight: '600',
+    color: colours.primaryInk,
+    fontFamily: fonts.monoMedium,
   },
 
   // Countdown
@@ -669,33 +677,38 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.sm,
     marginBottom: spacing.md,
     borderWidth: 1.5,
+    backgroundColor: colours.primary,
+    borderColor: colours.primary,
   },
   countdownOpen: {
-    backgroundColor: colours.amber50,
-    borderColor: colours.amber200,
+    backgroundColor: colours.primary,
+    borderColor: colours.primary,
   },
   countdownExpired: {
-    backgroundColor: colours.surfaceAlt,
+    backgroundColor: colours.surfaceMuted,
     borderColor: colours.border,
   },
   countdownLabel: {
     fontSize: 13.5,
     fontWeight: '500',
-    color: colours.amber700,
+    fontFamily: fonts.monoMedium,
+    color: colours.primaryInk,
     marginRight: spacing.sm,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
   },
   countdownValue: {
     fontSize: 14,
     fontWeight: '700',
-    color: colours.amber800,
-    fontFamily: 'monospace',
+    fontFamily: fonts.monoBold,
+    color: colours.primaryInk,
   },
 
   // Future card
   futureCard: {
-    backgroundColor: colours.blue50,
+    backgroundColor: colours.infoSoft,
     borderWidth: 1.5,
-    borderColor: colours.blue200,
+    borderColor: colours.info,
     borderRadius: borderRadius.sm,
     paddingVertical: 10,
     paddingHorizontal: 14,
@@ -704,12 +717,14 @@ const styles = StyleSheet.create({
   futureLabel: {
     fontSize: 13.5,
     fontWeight: '600',
-    color: colours.blue800,
+    fontFamily: fonts.sansSemiBold,
+    color: colours.info,
     marginBottom: 4,
   },
   futureValue: {
     fontSize: 13,
-    color: colours.blue700,
+    fontFamily: fonts.sansRegular,
+    color: colours.info,
     fontWeight: '500',
   },
 
@@ -717,7 +732,7 @@ const styles = StyleSheet.create({
   lockedBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colours.surfaceAlt,
+    backgroundColor: colours.surfaceMuted,
     borderRadius: borderRadius.sm,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
@@ -732,23 +747,24 @@ const styles = StyleSheet.create({
   lockedText: {
     fontSize: 13.5,
     fontWeight: '600',
-    color: colours.textMuted,
+    fontFamily: fonts.sansSemiBold,
+    color: colours.inkMuted,
   },
 
   // Pending banner
   pendingBanner: {
     flexDirection: 'row',
-    backgroundColor: colours.amber50,
+    backgroundColor: colours.warningSoft,
     borderWidth: 1,
-    borderColor: colours.amber400,
+    borderColor: colours.warning,
     borderRadius: 10,
     paddingVertical: 12,
     paddingHorizontal: 14,
     marginBottom: spacing.md,
   },
   pendingBannerUrgent: {
-    backgroundColor: colours.red50,
-    borderColor: colours.red400,
+    backgroundColor: colours.dangerSoft,
+    borderColor: colours.danger,
   },
   pendingIcon: {
     fontSize: 18,
@@ -761,12 +777,14 @@ const styles = StyleSheet.create({
   pendingTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: colours.gray700,
+    fontFamily: fonts.sansSemiBold,
+    color: colours.ink,
     marginBottom: 4,
   },
   pendingSubtitle: {
     fontSize: 13,
-    color: colours.gray500,
+    fontFamily: fonts.sansRegular,
+    color: colours.inkMuted,
     lineHeight: 18,
   },
 
@@ -781,24 +799,24 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   pickCardChangeable: {
-    backgroundColor: colours.amber50,
-    borderColor: '#fcd34d',
+    backgroundColor: colours.warningSoft,
+    borderColor: colours.warning,
   },
   pickCardSurvived: {
-    backgroundColor: colours.green50,
-    borderColor: colours.green300,
+    backgroundColor: colours.primarySoft,
+    borderColor: colours.success,
   },
   pickCardEliminated: {
-    backgroundColor: colours.red50,
-    borderColor: colours.dangerBorder,
+    backgroundColor: colours.dangerSoft,
+    borderColor: colours.danger,
   },
   pickCardLocked: {
-    backgroundColor: colours.surfaceAlt,
+    backgroundColor: colours.surfaceMuted,
     borderColor: colours.border,
   },
   pickCardMissed: {
-    backgroundColor: colours.red50,
-    borderColor: colours.dangerBorder,
+    backgroundColor: colours.dangerSoft,
+    borderColor: colours.danger,
   },
   pickCardSelection: {
     backgroundColor: colours.surface,
@@ -815,45 +833,51 @@ const styles = StyleSheet.create({
   pickLabel: {
     fontSize: 11,
     fontWeight: '600',
-    color: colours.textMuted,
+    fontFamily: fonts.monoMedium,
+    color: colours.inkSoft,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 1.2,
     marginBottom: 2,
   },
   pickPlayer: {
     fontSize: 17,
     fontWeight: '700',
-    color: colours.text,
+    fontFamily: fonts.sansBold,
+    color: colours.ink,
     marginBottom: 4,
   },
   pickHint: {
     fontSize: 12,
-    color: colours.textMuted,
+    fontFamily: fonts.sansRegular,
+    color: colours.inkMuted,
   },
   pickSeed: {
     fontSize: 12,
-    color: colours.textMuted,
+    fontFamily: fonts.sansRegular,
+    color: colours.inkMuted,
     marginTop: 4,
   },
   pickOpponent: {
     fontSize: 13,
-    color: colours.textMuted,
+    fontFamily: fonts.sansRegular,
+    color: colours.inkMuted,
     marginTop: 2,
   },
   pickMatchStatus: {
     fontSize: 12,
     fontWeight: '600',
-    color: colours.textMuted,
+    fontFamily: fonts.sansSemiBold,
+    color: colours.inkMuted,
     marginTop: 4,
   },
   pickMatchStatusLive: {
-    color: '#ef4444',
+    color: colours.danger,
   },
 
   // Confirm button
   confirmButton: {
     backgroundColor: colours.primary,
-    borderRadius: borderRadius.sm,
+    borderRadius: borderRadius.pill,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     marginLeft: spacing.md,
@@ -864,9 +888,10 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   confirmButtonText: {
-    color: colours.white,
+    color: colours.primaryInk,
     fontSize: 14,
     fontWeight: '600',
+    fontFamily: fonts.sansSemiBold,
   },
 
   // Search
@@ -874,11 +899,12 @@ const styles = StyleSheet.create({
     backgroundColor: colours.surface,
     borderWidth: 1.5,
     borderColor: colours.border,
-    borderRadius: borderRadius.sm,
+    borderRadius: borderRadius.md,
     paddingVertical: 10,
     paddingHorizontal: 14,
     fontSize: 15,
-    color: colours.text,
+    fontFamily: fonts.sansRegular,
+    color: colours.ink,
     marginBottom: spacing.md,
   },
 
@@ -886,7 +912,8 @@ const styles = StyleSheet.create({
   playerCount: {
     fontSize: 12.5,
     fontWeight: '500',
-    color: colours.textMuted,
+    fontFamily: fonts.sansRegular,
+    color: colours.inkMuted,
     marginBottom: spacing.sm,
   },
 
@@ -903,21 +930,23 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: colours.text,
+    fontFamily: fonts.sansBold,
+    color: colours.ink,
     marginBottom: spacing.xs,
   },
   emptySub: {
     fontSize: 13,
-    color: colours.textMuted,
+    fontFamily: fonts.sansRegular,
+    color: colours.inkMuted,
     textAlign: 'center',
     paddingHorizontal: spacing.md,
   },
 
   // Error banner
   errorBanner: {
-    backgroundColor: colours.dangerBg,
+    backgroundColor: colours.dangerSoft,
     borderWidth: 1,
-    borderColor: colours.dangerBorder,
+    borderColor: colours.danger,
     borderRadius: borderRadius.sm,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
@@ -925,15 +954,16 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 13,
+    fontFamily: fonts.sansRegular,
     color: colours.danger,
     fontWeight: '500',
   },
 
   // Overlap tip
   overlapTip: {
-    backgroundColor: colours.blue50,
+    backgroundColor: colours.infoSoft,
     borderWidth: 1,
-    borderColor: colours.blue200,
+    borderColor: colours.info,
     borderRadius: borderRadius.md,
     padding: spacing.md,
     marginBottom: spacing.md,
@@ -941,18 +971,20 @@ const styles = StyleSheet.create({
   overlapTipTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: colours.blue800,
+    fontFamily: fonts.sansSemiBold,
+    color: colours.info,
     marginBottom: 4,
   },
   overlapTipText: {
     fontSize: 13,
-    color: colours.blue700,
+    fontFamily: fonts.sansRegular,
+    color: colours.info,
     lineHeight: 18,
   },
 
   // Eliminated card
   eliminatedCard: {
-    backgroundColor: colours.surfaceAlt,
+    backgroundColor: colours.surfaceMuted,
     borderWidth: 1.5,
     borderColor: colours.border,
     borderRadius: borderRadius.md,
@@ -967,19 +999,22 @@ const styles = StyleSheet.create({
   eliminatedTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: colours.text,
+    fontFamily: fonts.sansBold,
+    color: colours.ink,
     marginBottom: spacing.sm,
     textAlign: 'center',
   },
   eliminatedSub: {
     fontSize: 14,
-    color: colours.textMuted,
+    fontFamily: fonts.sansRegular,
+    color: colours.inkMuted,
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: spacing.sm,
   },
   eliminatedHint: {
     fontSize: 13,
+    fontFamily: fonts.sansSemiBold,
     color: colours.primary,
     fontWeight: '500',
     textAlign: 'center',
@@ -987,9 +1022,9 @@ const styles = StyleSheet.create({
 
   // Bracket hint
   bracketHint: {
-    backgroundColor: colours.primaryLight,
+    backgroundColor: colours.primarySoft,
     borderWidth: 1,
-    borderColor: colours.successBorder,
+    borderColor: colours.success,
     borderRadius: borderRadius.sm,
     padding: spacing.md,
     marginBottom: spacing.md,
@@ -997,14 +1032,16 @@ const styles = StyleSheet.create({
   bracketHintText: {
     fontSize: 13,
     fontWeight: '500',
-    color: colours.primaryDark,
+    fontFamily: fonts.sansRegular,
+    color: colours.primary,
     lineHeight: 18,
   },
 
   // Disclaimer
   disclaimer: {
     fontSize: 12,
-    color: colours.textMuted,
+    fontFamily: fonts.sansRegular,
+    color: colours.inkMuted,
     lineHeight: 17,
     marginTop: spacing.sm,
     paddingHorizontal: spacing.md,

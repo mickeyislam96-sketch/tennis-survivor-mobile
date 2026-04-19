@@ -16,7 +16,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
 import { updateProfile, getMyPools } from '../api/auth';
-import { colours, spacing, borderRadius } from '../theme';
+import { colours, spacing, borderRadius, fonts } from '../theme';
 import type { ProfileStackParamList } from '../navigation/ProfileStack';
 
 function isValidEmail(e: string): boolean {
@@ -266,7 +266,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colours.background,
+    backgroundColor: colours.canvas,
   },
   scroll: {
     padding: spacing.md,
@@ -288,16 +288,17 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     fontSize: 24,
-    fontWeight: '700',
+    fontFamily: fonts.sansBold,
     color: colours.white,
   },
   userName: {
     fontSize: 20,
-    fontWeight: '700',
+    fontFamily: fonts.sansBold,
     color: colours.text,
   },
   userEmail: {
     fontSize: 14,
+    fontFamily: fonts.sansRegular,
     color: colours.textMuted,
     marginTop: spacing.xs,
   },
@@ -311,12 +312,13 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: fonts.sansBold,
     color: colours.text,
     marginBottom: spacing.md,
   },
   poolsEmpty: {
     fontSize: 13,
+    fontFamily: fonts.sansRegular,
     color: colours.textMuted,
     fontStyle: 'italic',
   },
@@ -333,22 +335,23 @@ const styles = StyleSheet.create({
   },
   poolName: {
     fontSize: 14,
-    fontWeight: '600',
+    fontFamily: fonts.serifBold,
     color: colours.text,
   },
   poolStatus: {
     fontSize: 12,
-    fontWeight: '500',
+    fontFamily: fonts.sansRegular,
     marginTop: 2,
   },
   poolArrow: {
     fontSize: 20,
+    fontFamily: fonts.sansRegular,
     color: colours.textMuted,
     marginLeft: spacing.sm,
   },
   label: {
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: fonts.monoMedium,
     color: colours.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
@@ -360,17 +363,19 @@ const styles = StyleSheet.create({
     borderColor: colours.border,
     borderRadius: borderRadius.md,
     padding: spacing.md,
+    fontFamily: fonts.sansRegular,
     color: colours.text,
     fontSize: 15,
   },
   hint: {
     fontSize: 12,
+    fontFamily: fonts.sansRegular,
     color: colours.warning,
     marginTop: spacing.xs,
   },
   saveButton: {
     backgroundColor: colours.primary,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.pill,
     padding: spacing.md,
     alignItems: 'center',
     marginBottom: spacing.md,
@@ -379,8 +384,8 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   saveButtonText: {
+    fontFamily: fonts.sansBold,
     color: colours.white,
-    fontWeight: '600',
     fontSize: 16,
   },
   logoutButton: {
@@ -390,9 +395,9 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   logoutText: {
+    fontFamily: fonts.sansBold,
     color: colours.danger,
     fontSize: 14,
-    fontWeight: '600',
   },
   termsLink: {
     alignItems: 'center',
@@ -400,12 +405,13 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
   termsLinkText: {
+    fontFamily: fonts.sansBold,
     color: colours.primary,
     fontSize: 14,
-    fontWeight: '600',
   },
   version: {
     textAlign: 'center',
+    fontFamily: fonts.sansRegular,
     color: colours.textMuted,
     fontSize: 12,
     marginTop: spacing.sm,

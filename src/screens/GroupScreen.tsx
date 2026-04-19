@@ -22,7 +22,7 @@ import { useCountdown } from '../hooks/useCountdown';
 import { schedulePickReminder, scheduleLastChanceReminder, cancelAllReminders } from '../services/notifications';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
-import { colours, spacing, typography, borderRadius, shadows } from '../theme';
+import { colours, spacing, typography, borderRadius, shadows, fonts } from '../theme';
 import { ROUND_LABELS } from '../utils/constants';
 
 type RootStackParamList = {
@@ -655,7 +655,7 @@ function getEliminationColor(percentage: number): string {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colours.background,
+    backgroundColor: colours.canvas,
   },
   content: {
     paddingBottom: spacing.xl,
@@ -682,9 +682,10 @@ const styles = StyleSheet.create({
   eyebrow: {
     fontSize: 11,
     fontWeight: '600',
+    fontFamily: fonts.monoMedium,
     color: 'rgba(255, 255, 255, 0.7)',
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    letterSpacing: 1.2,
     marginBottom: spacing.xs,
     position: 'relative',
     zIndex: 1,
@@ -692,6 +693,7 @@ const styles = StyleSheet.create({
   heroTitle: {
     fontSize: 24,
     fontWeight: '800',
+    fontFamily: fonts.serifBold,
     color: colours.white,
     letterSpacing: -0.3,
     marginBottom: spacing.md,
@@ -713,14 +715,16 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 22,
     fontWeight: '800',
+    fontFamily: fonts.monoBold,
     color: colours.white,
     letterSpacing: -0.3,
   },
   statLabel: {
     fontSize: 11,
+    fontFamily: fonts.monoMedium,
     color: 'rgba(255, 255, 255, 0.65)',
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    letterSpacing: 1.2,
     marginTop: 4,
   },
   statDivider: {
@@ -743,6 +747,7 @@ const styles = StyleSheet.create({
   survivorLabel: {
     fontSize: 16,
     fontWeight: '700',
+    fontFamily: fonts.sansBold,
     color: colours.text,
     marginBottom: spacing.sm,
   },
@@ -756,6 +761,7 @@ const styles = StyleSheet.create({
   aliveBadge: {
     fontSize: 13,
     fontWeight: '700',
+    fontFamily: fonts.sansSemiBold,
     color: colours.success,
   },
   countDivider: {
@@ -766,6 +772,7 @@ const styles = StyleSheet.create({
   eliminatedBadge: {
     fontSize: 13,
     fontWeight: '700',
+    fontFamily: fonts.sansSemiBold,
     color: colours.textMuted,
   },
   trackBg: {
@@ -782,12 +789,14 @@ const styles = StyleSheet.create({
   },
   meterCaption: {
     fontSize: 12,
+    fontFamily: fonts.sansRegular,
     color: colours.textMuted,
     textAlign: 'center',
     marginTop: spacing.sm,
   },
   meterSubCaption: {
     fontSize: 11,
+    fontFamily: fonts.sansRegular,
     color: colours.textMuted,
     textAlign: 'center',
     marginTop: 2,
@@ -821,14 +830,16 @@ const styles = StyleSheet.create({
   pickEyebrow: {
     fontSize: 11,
     fontWeight: '700',
+    fontFamily: fonts.monoMedium,
     color: colours.successDark,
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    letterSpacing: 1.2,
     marginBottom: spacing.xs,
   },
   pickPlayerName: {
     fontSize: 17,
     fontWeight: '800',
+    fontFamily: fonts.sansBold,
     color: colours.text,
     letterSpacing: -0.3,
   },
@@ -836,11 +847,12 @@ const styles = StyleSheet.create({
     backgroundColor: colours.primary,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    borderRadius: borderRadius.sm,
+    borderRadius: borderRadius.pill,
   },
   changePickButtonText: {
     color: colours.white,
     fontWeight: '700',
+    fontFamily: fonts.sansMedium,
     fontSize: 12,
   },
   pickedLocked: {
@@ -848,7 +860,7 @@ const styles = StyleSheet.create({
   },
   makePickButton: {
     backgroundColor: colours.primary,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.pill,
     paddingVertical: spacing.lg,
     alignItems: 'center',
     justifyContent: 'center',
@@ -856,6 +868,7 @@ const styles = StyleSheet.create({
   makePickButtonText: {
     color: colours.white,
     fontWeight: '800',
+    fontFamily: fonts.sansBold,
     fontSize: 16,
     letterSpacing: -0.3,
   },
@@ -893,12 +906,14 @@ const styles = StyleSheet.create({
   navTitle: {
     fontSize: 14.5,
     fontWeight: '700',
+    fontFamily: fonts.sansBold,
     color: colours.text,
     textAlign: 'center',
     marginBottom: spacing.xs,
   },
   navDescription: {
     fontSize: 12.5,
+    fontFamily: fonts.sansRegular,
     color: colours.textMuted,
     textAlign: 'center',
   },
@@ -911,9 +926,10 @@ const styles = StyleSheet.create({
   inviteEyebrow: {
     fontSize: 11,
     fontWeight: '700',
+    fontFamily: fonts.monoMedium,
     color: colours.textMuted,
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    letterSpacing: 1.2,
     marginBottom: spacing.sm,
   },
   inviteBox: {
@@ -929,7 +945,7 @@ const styles = StyleSheet.create({
   },
   inviteCode: {
     fontSize: 14,
-    fontFamily: 'monospace',
+    fontFamily: fonts.monoBold,
     color: colours.primaryDark,
     backgroundColor: colours.primaryLight,
     borderRadius: borderRadius.xs,
@@ -943,20 +959,21 @@ const styles = StyleSheet.create({
     backgroundColor: colours.primary,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    borderRadius: borderRadius.sm,
+    borderRadius: borderRadius.pill,
     marginLeft: spacing.md,
   },
   inviteShareButtonText: {
     color: colours.white,
     fontWeight: '700',
+    fontFamily: fonts.sansMedium,
     fontSize: 12,
   },
 
   /* Urgency Banner */
   urgencyBanner: {
-    backgroundColor: '#fef3c7',
+    backgroundColor: colours.warningBg,
     borderWidth: 1,
-    borderColor: '#fbbf24',
+    borderColor: colours.warningBorder,
     borderRadius: borderRadius.md,
     marginHorizontal: spacing.md,
     marginTop: spacing.md,
@@ -974,26 +991,31 @@ const styles = StyleSheet.create({
   urgencyTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#92400e',
+    fontFamily: fonts.sansMedium,
+    color: colours.warningDark,
     marginBottom: 2,
   },
   urgencySubtitle: {
     fontSize: 12,
-    color: '#92400e',
+    fontFamily: fonts.sansRegular,
+    color: colours.warningDark,
     opacity: 0.8,
   },
   urgencyArrow: {
     fontSize: 13,
-    color: '#92400e',
+    color: colours.warningDark,
     fontWeight: '700',
+    fontFamily: fonts.sansMedium,
   },
   pickWindowHint: {
     fontSize: 12,
+    fontFamily: fonts.sansRegular,
     color: colours.textMuted,
     marginTop: spacing.sm,
   },
   pickWindowHintCentre: {
     fontSize: 12,
+    fontFamily: fonts.sansRegular,
     color: colours.textMuted,
     marginTop: spacing.sm,
     textAlign: 'center',
@@ -1038,11 +1060,13 @@ const styles = StyleSheet.create({
   timelineStepTitle: {
     fontSize: 14,
     fontWeight: '600',
+    fontFamily: fonts.sansMedium,
     color: colours.text,
     marginBottom: 2,
   },
   timelineStepDesc: {
     fontSize: 12,
+    fontFamily: fonts.sansRegular,
     color: colours.textMuted,
   },
   timelineLine: {
@@ -1061,7 +1085,7 @@ const styles = StyleSheet.create({
   },
   joinButton: {
     backgroundColor: colours.primary,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.pill,
     paddingVertical: spacing.lg,
     paddingHorizontal: spacing.xl,
     alignItems: 'center',
@@ -1071,11 +1095,13 @@ const styles = StyleSheet.create({
   joinButtonText: {
     color: colours.white,
     fontWeight: '800',
+    fontFamily: fonts.sansBold,
     fontSize: 16,
     letterSpacing: -0.3,
   },
   joinHint: {
     fontSize: 12,
+    fontFamily: fonts.sansRegular,
     color: colours.textMuted,
     marginTop: spacing.sm,
     textAlign: 'center',
@@ -1096,12 +1122,14 @@ const styles = StyleSheet.create({
   entryClosedTitle: {
     fontSize: 16,
     fontWeight: '700',
+    fontFamily: fonts.sansBold,
     color: colours.text,
     marginBottom: spacing.xs,
     textAlign: 'center',
   },
   entryClosedSub: {
     fontSize: 13,
+    fontFamily: fonts.sansRegular,
     color: colours.textMuted,
     textAlign: 'center',
     lineHeight: 18,
@@ -1117,11 +1145,13 @@ const styles = StyleSheet.create({
   footerLink: {
     fontSize: 13,
     fontWeight: '600',
+    fontFamily: fonts.sansMedium,
     color: colours.primary,
     marginBottom: spacing.xs,
   },
   footerCopy: {
     fontSize: 12,
+    fontFamily: fonts.sansRegular,
     color: colours.textMuted,
   },
 });
