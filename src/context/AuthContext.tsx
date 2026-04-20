@@ -1,5 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { getStoredUser, setStoredUser, clearStoredUser, StoredUser } from '../utils/storage';
+import {
+  getStoredUser,
+  setStoredUser,
+  clearStoredUser,
+  setStoredToken,
+  StoredUser,
+} from '../utils/storage';
 import * as authApi from '../api/auth';
 
 interface AuthContextType {
@@ -23,14 +29,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const stored = await getStoredUser();
         if (stored) {
-          // Verify user still exists on backend
+          // Verify user still exists on backend (uses stored JWT token)
           const verified = await authApi.getMe();
           const u = { id: verified.id, email: verified.email, displayName: verified.displayName };
           await setStoredUser(u);
           setUser(u);
         }
       } catch {
-        // Stored user is invalid — clear
+        // Stored user or token is invalid — clear everything
         await clearStoredUser();
       } finally {
         setLoading(false);
@@ -41,6 +47,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     const res = await authApi.login(email, password);
     const u = { id: res.id, email: res.email, displayName: res.displayName };
+    // Store JWT token from server response
+    if (res.token) {
+      await setStoredToken(res.token);
+    }
     await setStoredUser(u);
     setUser(u);
   }, []);
@@ -48,12 +58,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const register = useCallback(async (email: string, displayName: string, password: string) => {
     const res = await authApi.register(email, displayName, password);
     const u = { id: res.id, email: res.email, displayName: res.displayName };
+    // Store JWT token from server response
+    if (res.token) {
+      await setStoredToken(res.token);
+    }
     await setStoredUser(u);
     setUser(u);
   }, []);
 
   const logout = useCallback(async () => {
-    await clearStoredUser();
+    await clearStoredUser(); // Also clears token
     setUser(null);
   }, []);
 

@@ -1,5 +1,5 @@
 import { API_BASE_URL } from '../utils/constants';
-import { getStoredUser } from '../utils/storage';
+import { getStoredToken } from '../utils/storage';
 
 interface RequestOptions {
   method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
@@ -10,9 +10,11 @@ interface RequestOptions {
 
 export class ApiError extends Error {
   status: number;
-  constructor(message: string, status: number) {
+  code?: string;
+  constructor(message: string, status: number, code?: string) {
     super(message);
     this.status = status;
+    this.code = code;
     this.name = 'ApiError';
   }
 }
@@ -26,16 +28,16 @@ export async function apiCall<T>(path: string, options: RequestOptions = {}): Pr
     Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
   }
 
-  // Add userId from storage
+  // Build headers
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
 
+  // Attach JWT token for authenticated requests
   if (!skipAuth) {
-    const user = await getStoredUser();
-    if (user?.id) {
-      url.searchParams.set('userId', user.id);
-      headers['X-User-Id'] = user.id;
+    const token = await getStoredToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
     }
   }
 
@@ -57,7 +59,11 @@ export async function apiCall<T>(path: string, options: RequestOptions = {}): Pr
   const data = await response.json();
 
   if (!response.ok) {
-    throw new ApiError(data.error || `HTTP ${response.status}`, response.status);
+    throw new ApiError(
+      data.error || `HTTP ${response.status}`,
+      response.status,
+      data.code,
+    );
   }
 
   return data as T;

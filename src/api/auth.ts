@@ -8,6 +8,8 @@ export interface User {
 
 export interface AuthResponse extends User {
   isNew?: boolean;
+  token?: string;
+  csrf?: string;
 }
 
 export function login(email: string, password: string): Promise<AuthResponse> {
