@@ -27,11 +27,11 @@ export function PoolsStack() {
   return (
     <Stack.Navigator
       screenOptions={{
-        headerStyle: { backgroundColor: colours.background },
-        headerTintColor: colours.text,
+        headerStyle: { backgroundColor: colours.canvas },
+        headerTintColor: colours.ink,
         headerTitleStyle: { fontWeight: '600' },
         headerShadowVisible: false,
-        contentStyle: { backgroundColor: colours.background },
+        contentStyle: { backgroundColor: colours.canvas },
         animation: 'slide_from_right',
       }}
     >

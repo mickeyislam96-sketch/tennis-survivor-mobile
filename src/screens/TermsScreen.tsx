@@ -6,7 +6,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import { colours, spacing, borderRadius } from '../theme';
+import { colours, spacing, borderRadius, fonts } from '../theme';
 
 export default function TermsScreen() {
   return (
@@ -84,7 +84,7 @@ export default function TermsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colours.background,
+    backgroundColor: colours.canvas,
   },
   scroll: {
     padding: spacing.md,
@@ -100,20 +100,23 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: '700',
-    color: colours.text,
+    fontFamily: fonts.serifBold,
+    color: colours.ink,
     marginBottom: spacing.md,
   },
   heading: {
     fontSize: 14,
     fontWeight: '700',
-    color: colours.text,
+    fontFamily: fonts.sansBold,
+    color: colours.ink,
     marginTop: spacing.lg,
     marginBottom: spacing.sm,
   },
   body: {
     fontSize: 15,
     lineHeight: 24,
-    color: colours.text,
+    fontFamily: fonts.sansRegular,
+    color: colours.ink,
     marginBottom: spacing.sm,
   },
 });

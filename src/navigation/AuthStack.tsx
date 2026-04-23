@@ -18,7 +18,7 @@ export function AuthStack() {
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: colours.background },
+        contentStyle: { backgroundColor: colours.canvas },
         animation: 'slide_from_right',
       }}
     >

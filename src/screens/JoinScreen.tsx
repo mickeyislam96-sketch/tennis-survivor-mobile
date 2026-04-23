@@ -12,7 +12,7 @@ import * as Haptics from 'expo-haptics';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { getGroupByInvite, joinGroup } from '../api/groups';
 import { useAuth } from '../context/AuthContext';
-import { colours, spacing, borderRadius, shadows } from '../theme';
+import { colours, spacing, borderRadius, shadows, fonts } from '../theme';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 interface Group {
@@ -154,7 +154,7 @@ export default function JoinScreen({ route }: JoinScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colours.background,
+    backgroundColor: colours.canvas,
   },
   content: {
     flex: 1,
@@ -176,13 +176,15 @@ const styles = StyleSheet.create({
   groupName: {
     fontSize: 22,
     fontWeight: '800',
-    color: colours.text,
+    fontFamily: fonts.sansBold,
+    color: colours.ink,
     textAlign: 'center',
     marginBottom: spacing.xs,
   },
   tournament: {
     fontSize: 14,
-    color: colours.textMuted,
+    fontFamily: fonts.sansRegular,
+    color: colours.inkMuted,
     marginBottom: spacing.lg,
   },
   divider: {
@@ -203,18 +205,20 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 22,
     fontWeight: '700',
-    color: colours.text,
+    fontFamily: fonts.sansBold,
+    color: colours.ink,
   },
   statLabel: {
     fontSize: 11,
-    color: colours.textMuted,
+    fontFamily: fonts.monoMedium,
+    color: colours.inkMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginTop: spacing.xs,
   },
   button: {
     width: '100%',
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.pill,
     padding: spacing.md,
     alignItems: 'center',
     justifyContent: 'center',
@@ -232,9 +236,11 @@ const styles = StyleSheet.create({
     color: colours.white,
     fontWeight: '600',
     fontSize: 16,
+    fontFamily: fonts.sansSemiBold,
   },
   errorText: {
     fontSize: 16,
+    fontFamily: fonts.sansRegular,
     color: colours.danger,
     textAlign: 'center',
   },

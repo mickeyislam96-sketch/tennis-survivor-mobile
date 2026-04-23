@@ -53,10 +53,10 @@ export function isMockId(id: string | null | undefined): boolean {
  */
 export function getPlayerImageUrl(playerId: string, playerName: string): string | null {
   if (playerId && !isMockId(playerId)) {
-    return `https://finalserveivor.com/headshots/${playerId}.jpg`;
+    return `https://finalserveivor.com/players/${playerId}.jpg`;
   }
   if (playerName) {
-    return `https://finalserveivor.com/headshots/${nameSlug(playerName)}.jpg`;
+    return `https://finalserveivor.com/players/${nameSlug(playerName)}.jpg`;
   }
   return null;
 }

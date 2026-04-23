@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
-import { colours, spacing, borderRadius } from '../theme';
+import { colours, spacing, borderRadius, fonts } from '../theme';
 
 type RootStackParamList = {
   Login: undefined;
@@ -252,16 +252,19 @@ const styles = StyleSheet.create({
   appName: {
     fontSize: 13,
     fontWeight: '800',
+    fontFamily: fonts.sansExtraBold,
     color: colours.white,
   },
   title: {
     fontSize: 28,
     fontWeight: '800',
+    fontFamily: fonts.serifBold,
     color: colours.white,
     marginTop: spacing.md,
   },
   subtitle: {
     fontSize: 15,
+    fontFamily: fonts.sansRegular,
     color: 'rgba(255, 255, 255, 0.8)',
     marginTop: spacing.xs,
   },
@@ -276,7 +279,8 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 12,
     fontWeight: '600',
-    color: colours.textMuted,
+    fontFamily: fonts.monoMedium,
+    color: colours.inkMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
     marginBottom: spacing.sm,
@@ -287,16 +291,19 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
-    color: colours.text,
+    color: colours.ink,
     fontSize: 15,
+    fontFamily: fonts.sansRegular,
   },
   hint: {
     fontSize: 12,
+    fontFamily: fonts.sansRegular,
     color: colours.warning,
     marginTop: spacing.xs,
   },
   hintSuccess: {
     fontSize: 12,
+    fontFamily: fonts.sansRegular,
     color: colours.success,
     marginTop: spacing.xs,
   },
@@ -324,21 +331,24 @@ const styles = StyleSheet.create({
     color: colours.white,
     fontSize: 14,
     fontWeight: '700',
+    fontFamily: fonts.sansBold,
   },
   termsText: {
     flex: 1,
     fontSize: 13,
-    color: colours.textMuted,
+    fontFamily: fonts.sansRegular,
+    color: colours.inkMuted,
     lineHeight: 18,
   },
   termsLink: {
     color: colours.primary,
     fontWeight: '600',
+    fontFamily: fonts.sansSemiBold,
     textDecorationLine: 'underline',
   },
   button: {
     backgroundColor: colours.primary,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.pill,
     paddingVertical: spacing.md,
     alignItems: 'center',
     justifyContent: 'center',
@@ -350,6 +360,7 @@ const styles = StyleSheet.create({
   buttonText: {
     fontWeight: '600',
     fontSize: 16,
+    fontFamily: fonts.sansSemiBold,
     color: colours.white,
   },
   footer: {
@@ -363,10 +374,12 @@ const styles = StyleSheet.create({
   loginText: {
     color: 'rgba(255, 255, 255, 0.7)',
     fontSize: 14,
+    fontFamily: fonts.sansRegular,
   },
   loginLink: {
     color: colours.white,
     fontWeight: '600',
     fontSize: 14,
+    fontFamily: fonts.sansSemiBold,
   },
 });

@@ -49,7 +49,7 @@ export function MainTabs() {
           height: 85,
         },
         tabBarActiveTintColor: colours.primary,
-        tabBarInactiveTintColor: colours.textMuted,
+        tabBarInactiveTintColor: colours.inkMuted,
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',

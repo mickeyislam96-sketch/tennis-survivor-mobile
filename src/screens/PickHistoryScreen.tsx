@@ -7,7 +7,7 @@ import {
   RefreshControl,
   SafeAreaView,
 } from 'react-native';
-import { colours, spacing, borderRadius, shadows } from '../theme';
+import { colours, spacing, borderRadius, shadows, fonts } from '../theme';
 import { getPickHistory } from '../api/picks';
 import { useAuth } from '../context/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -143,7 +143,7 @@ export default function PickHistoryScreen({ route }: PickHistoryScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colours.background,
+    backgroundColor: colours.canvas,
   },
   listContent: {
     padding: spacing.md,
@@ -166,9 +166,10 @@ const styles = StyleSheet.create({
   roundLabel: {
     fontSize: 11,
     fontWeight: '700',
+    fontFamily: fonts.monoMedium,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
-    color: colours.textMuted,
+    color: colours.inkMuted,
   },
   statusPill: {
     paddingVertical: spacing.xs,
@@ -178,10 +179,12 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 12,
     fontWeight: '600',
+    fontFamily: fonts.sansSemiBold,
   },
   playerName: {
     fontSize: 16,
     fontWeight: '700',
-    color: colours.text,
+    fontFamily: fonts.sansBold,
+    color: colours.ink,
   },
 });
