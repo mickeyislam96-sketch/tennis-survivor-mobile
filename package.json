@@ -6,18 +6,16 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "postinstall": "node patches/fix-expo-asset.js"
   },
   "dependencies": {
-    "@expo-google-fonts/fraunces": "^0.4.1",
-    "@expo-google-fonts/jetbrains-mono": "^0.4.1",
-    "@expo-google-fonts/outfit": "^0.4.3",
     "@gorhom/bottom-sheet": "^5.0.0",
     "@react-navigation/bottom-tabs": "^7.0.0",
     "@react-navigation/native": "^7.0.0",
     "@react-navigation/native-stack": "^7.0.0",
     "expo": "~54.0.0",
-    "expo-asset": "~11.0.0",
+    "expo-asset": "^11.1.7",
     "expo-constants": "~17.0.0",
     "expo-device": "~7.0.0",
     "expo-font": "~13.0.0",
