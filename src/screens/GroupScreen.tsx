@@ -82,10 +82,11 @@ export function GroupScreen({ navigation, route }: Props) {
     return group?.members?.length ?? 0;
   }, [group]);
 
-  // Elimination percentage: 0% = nobody eliminated, 100% = everyone eliminated
+  // Elimination percentage: denominator is (total - 1) because last person standing wins.
+  // With 6 members and 1 eliminated: 1/5 = 20%, matching web.
   const eliminationPercentage = useMemo(() => {
-    if (totalMembers === 0) return 0;
-    return (eliminatedCount / totalMembers) * 100;
+    if (totalMembers <= 1) return 0;
+    return Math.round((eliminatedCount / (totalMembers - 1)) * 100);
   }, [eliminatedCount, totalMembers]);
 
   const nextDeadline = useMemo(() => {
@@ -351,11 +352,11 @@ export function GroupScreen({ navigation, route }: Props) {
         {/* Survivor Meter */}
         {group.members && group.members.length > 0 && !isUpcoming && (
           <View style={styles.survivorCard}>
-            <Text style={styles.survivorLabel}>Survivor Meter</Text>
-            <View style={styles.survivorCounts}>
-              <Text style={styles.aliveBadge}>{aliveCount} alive</Text>
-              <View style={styles.countDivider} />
-              <Text style={styles.eliminatedBadge}>{eliminatedCount} eliminated</Text>
+            <View style={styles.survivorHeader}>
+              <Text style={styles.survivorLabel}>SURVIVOMETER</Text>
+              <Text style={styles.survivorCounts}>
+                <Text style={styles.survivorCountBold}>{aliveCount}</Text> still in {'\u00B7'} <Text style={styles.survivorCountBold}>{eliminatedCount}</Text> eliminated
+              </Text>
             </View>
             <View style={styles.trackBg}>
               <View
@@ -368,14 +369,14 @@ export function GroupScreen({ navigation, route }: Props) {
                 ]}
               />
             </View>
-            <Text style={styles.meterCaption}>
-              {Math.round(eliminationPercentage)}% of the field eliminated
-            </Text>
-            {aliveCount > 1 && (
-              <Text style={styles.meterSubCaption}>
-                Last one standing wins the prize pool
+            <View style={styles.meterFooter}>
+              <Text style={styles.meterCaption}>
+                {eliminationPercentage}% of the field eliminated
               </Text>
-            )}
+              <Text style={styles.meterSubCaption}>
+                {aliveCount === 1 ? '\uD83C\uDFC6 We have a winner' : 'Last one standing wins the prize pot'}
+              </Text>
+            </View>
           </View>
         )}
 
@@ -646,10 +647,9 @@ function formatTimelineDate(dateStr?: string | null): string {
  * Low elimination = green, medium = amber, high = red.
  */
 function getEliminationColor(percentage: number): string {
-  if (percentage <= 0) return colours.success;
-  if (percentage < 50) return colours.success;
-  if (percentage < 80) return colours.warning;
-  return colours.danger;
+  if (percentage >= 80) return colours.danger;
+  if (percentage >= 50) return colours.accent;
+  return colours.primary;
 }
 
 const styles = StyleSheet.create({
@@ -744,63 +744,58 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colours.border,
   },
-  survivorLabel: {
-    fontSize: 16,
-    fontWeight: '700',
-    fontFamily: fonts.sansBold,
-    color: colours.text,
+  survivorHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: spacing.sm,
   },
+  survivorLabel: {
+    fontSize: 11,
+    fontFamily: fonts.monoMedium,
+    color: colours.ink,
+    letterSpacing: 1.2,
+  },
   survivorCounts: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.md,
-    marginBottom: spacing.md,
+    fontSize: 12,
+    fontFamily: fonts.sansRegular,
+    color: colours.inkMuted,
   },
-  aliveBadge: {
-    fontSize: 13,
-    fontWeight: '700',
+  survivorCountBold: {
     fontFamily: fonts.sansSemiBold,
-    color: colours.success,
-  },
-  countDivider: {
-    width: 1,
-    height: 16,
-    backgroundColor: colours.textMuted,
-  },
-  eliminatedBadge: {
-    fontSize: 13,
-    fontWeight: '700',
-    fontFamily: fonts.sansSemiBold,
-    color: colours.textMuted,
+    color: colours.ink,
   },
   trackBg: {
-    height: 14,
-    borderRadius: borderRadius.xs,
-    backgroundColor: colours.surfaceAlt,
+    height: 8,
+    borderRadius: borderRadius.pill,
+    backgroundColor: colours.surface,
     borderWidth: 1,
     borderColor: colours.border,
     overflow: 'hidden',
+    marginBottom: spacing.sm,
   },
   trackFill: {
     height: '100%',
-    borderRadius: borderRadius.xs,
+    borderRadius: borderRadius.pill,
+  },
+  meterFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   meterCaption: {
-    fontSize: 12,
-    fontFamily: fonts.sansRegular,
-    color: colours.textMuted,
-    textAlign: 'center',
-    marginTop: spacing.sm,
+    fontSize: 11,
+    fontFamily: fonts.monoMedium,
+    color: colours.inkSoft,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
   meterSubCaption: {
     fontSize: 11,
-    fontFamily: fonts.sansRegular,
-    color: colours.textMuted,
-    textAlign: 'center',
-    marginTop: 2,
-    fontStyle: 'italic',
+    fontFamily: fonts.monoMedium,
+    color: colours.inkSoft,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
 
   /* Deadline Section */

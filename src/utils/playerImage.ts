@@ -42,21 +42,30 @@ export function nameSlug(name: string): string {
     .replace(/^-|-$/g, '');
 }
 
-/** Is this a real data-provider ID or a mock placeholder? */
+/**
+ * Is this a mock/internal ID rather than a real data-provider ID?
+ * Mock IDs: "p1", "mc-p5", "madrid-p3", etc.
+ */
 export function isMockId(id: string | null | undefined): boolean {
-  return !id || /^(mc-)?p\d+$/i.test(id);
+  return !id || /^(\w+-)?p\d+$/i.test(id);
 }
 
 /**
- * Returns the headshot URL for a player, served from the web frontend.
- * Falls back to null (component shows initials circle).
+ * Returns an ordered list of headshot URLs to try for a player.
+ * PlayerAvatar walks this list: try each URL, on error try the next,
+ * then fall back to initials circle.
+ *
+ * Resolution order:
+ * 1. Real player ID  → /players/{id}.jpg  (skipped for mock IDs)
+ * 2. Name slug       → /players/{slug}.jpg
  */
-export function getPlayerImageUrl(playerId: string, playerName: string): string | null {
+export function getPlayerImageUrls(playerId: string, playerName: string): string[] {
+  const urls: string[] = [];
   if (playerId && !isMockId(playerId)) {
-    return `https://finalserveivor.com/players/${playerId}.jpg`;
+    urls.push(`https://finalserveivor.com/players/${playerId}.jpg`);
   }
   if (playerName) {
-    return `https://finalserveivor.com/players/${nameSlug(playerName)}.jpg`;
+    urls.push(`https://finalserveivor.com/players/${nameSlug(playerName)}.jpg`);
   }
-  return null;
+  return urls;
 }

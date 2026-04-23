@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
-import { avatarColour, initials, getPlayerImageUrl } from '../utils/playerImage';
+import { avatarColour, initials, getPlayerImageUrls } from '../utils/playerImage';
 import { fonts } from '../theme';
 
 interface PlayerAvatarProps {
@@ -11,7 +11,7 @@ interface PlayerAvatarProps {
 
 /**
  * Circular player avatar with headshot fallback chain:
- * 1. Try headshot from finalserveivor.com/headshots/
+ * 1. Try each candidate URL in order (real ID → name slug)
  * 2. Fall back to coloured initials circle
  */
 const PlayerAvatar: React.FC<PlayerAvatarProps> = ({
@@ -19,8 +19,8 @@ const PlayerAvatar: React.FC<PlayerAvatarProps> = ({
   playerName,
   size = 32,
 }) => {
-  const [imgFailed, setImgFailed] = useState(false);
-  const imageUrl = getPlayerImageUrl(playerId || '', playerName);
+  const urls = getPlayerImageUrls(playerId || '', playerName);
+  const [urlIndex, setUrlIndex] = useState(0);
 
   const containerStyle = {
     width: size,
@@ -28,18 +28,20 @@ const PlayerAvatar: React.FC<PlayerAvatarProps> = ({
     borderRadius: size / 2,
   };
 
-  // Show image if URL exists and hasn't failed
-  if (imageUrl && !imgFailed) {
+  const currentUrl = urls[urlIndex];
+
+  // Show image if we still have URLs to try
+  if (currentUrl) {
     return (
       <Image
-        source={{ uri: imageUrl }}
+        source={{ uri: currentUrl }}
         style={[styles.image, containerStyle]}
-        onError={() => setImgFailed(true)}
+        onError={() => setUrlIndex((i) => i + 1)}
       />
     );
   }
 
-  // Initials fallback
+  // Initials fallback (all URLs exhausted)
   const bg = avatarColour(playerName);
   const fontSize = size * 0.38;
 
