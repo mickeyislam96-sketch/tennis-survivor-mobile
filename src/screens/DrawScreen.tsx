@@ -8,7 +8,7 @@ import { getRounds, getBracket, getMatchup, DrawMatch, DrawPlayer, BracketData, 
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 import EmptyState from '../components/EmptyState';
-// Badge no longer used in this screen
+import PlayerAvatar from '../components/PlayerAvatar';
 import { colours, spacing, borderRadius, shadows, fonts } from '../theme';
 import { ROUND_LABELS, ROUND_ORDER } from '../utils/constants';
 
@@ -242,6 +242,9 @@ export function DrawScreen() {
         {/* Player 1 */}
         <View style={styles.playerRow}>
           <View style={styles.playerNameRow}>
+            {item.player1Name && item.player1Name !== 'TBD' && (
+              <PlayerAvatar playerId={item.player1Id} playerName={item.player1Name} size={22} />
+            )}
             {p1Seed != null && (
               <Text style={styles.seedBadge}>{p1Seed}</Text>
             )}
@@ -266,6 +269,9 @@ export function DrawScreen() {
         {/* Player 2 */}
         <View style={styles.playerRow}>
           <View style={styles.playerNameRow}>
+            {item.player2Name && item.player2Name !== 'TBD' && (
+              <PlayerAvatar playerId={item.player2Id} playerName={item.player2Name} size={22} />
+            )}
             {p2Seed != null && (
               <Text style={styles.seedBadge}>{p2Seed}</Text>
             )}

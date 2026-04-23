@@ -61,6 +61,7 @@ export default function PickScreen({ route }: Props) {
   const isLocked = currentDeadline?.isLocked ?? false;
   const isOpen = currentDeadline?.isOpen ?? false;
   const isNotYetOpen = !isLocked && !isOpen;
+  const isPerMatchLock = currentDeadline?.perMatchLock ?? false;
 
   const survivedCount = allPicks.filter((p) => p.survived === true).length;
 
@@ -137,6 +138,12 @@ export default function PickScreen({ route }: Props) {
     const q = search.trim().toLowerCase();
     const matchesSearch = !q || name.includes(q) || opponent.includes(q) || possible.some((o: string) => o.includes(q));
     return alive && matchesSearch;
+  }).sort((a, b) => {
+    // Sort by match start time (earliest first) in R1 per-match lock mode
+    if (!isPerMatchLock) return 0;
+    const timeA = a.matchStartTime ? new Date(a.matchStartTime).getTime() : Infinity;
+    const timeB = b.matchStartTime ? new Date(b.matchStartTime).getTime() : Infinity;
+    return timeA - timeB;
   });
 
   // Initial load
@@ -349,8 +356,8 @@ export default function PickScreen({ route }: Props) {
         ))}
       </ScrollView>
 
-      {/* Countdown card (open) */}
-      {isOpen && lockTime && (
+      {/* Countdown card (open, round-level lock) */}
+      {isOpen && lockTime && !isPerMatchLock && (
         <View
           style={[
             styles.countdownCard,
@@ -362,6 +369,16 @@ export default function PickScreen({ route }: Props) {
           </Text>
           <Text style={styles.countdownValue}>
             {countdown.isExpired ? '\u2014' : countdown.display}
+          </Text>
+        </View>
+      )}
+
+      {/* Per-match lock info card (R1) */}
+      {isOpen && isPerMatchLock && (
+        <View style={styles.perMatchCard}>
+          <Text style={styles.perMatchLabel}>PER-MATCH LOCK</Text>
+          <Text style={styles.perMatchText}>
+            Your pick locks when the match starts. Players are removed from the list as their matches begin.
           </Text>
         </View>
       )}
@@ -560,6 +577,7 @@ export default function PickScreen({ route }: Props) {
                   isUsed={isUsed}
                   isPending={isPending}
                   pendingRound={prevRound || undefined}
+                  showMatchTime={isPerMatchLock}
                   onPress={() => handlePlayerSelect(player)}
                   disabled={isUsed || isCurrentPick || submitting}
                 />
@@ -702,6 +720,28 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontFamily: fonts.monoBold,
     color: colours.primaryInk,
+  },
+
+  // Per-match lock info card (R1)
+  perMatchCard: {
+    backgroundColor: colours.primary,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  perMatchLabel: {
+    fontSize: 11,
+    fontFamily: fonts.monoMedium,
+    color: 'rgba(255,255,255,0.7)',
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+    marginBottom: 4,
+  },
+  perMatchText: {
+    fontSize: 13,
+    fontFamily: fonts.sansRegular,
+    color: colours.primaryInk,
+    lineHeight: 19,
   },
 
   // Future card

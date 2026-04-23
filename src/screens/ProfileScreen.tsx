@@ -250,10 +250,17 @@ export default function ProfileScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
+            onPress={() => navigation.navigate('Support')}
+            style={styles.termsLink}
+          >
+            <Text style={styles.termsLinkText}>Contact Support</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
             onPress={() => navigation.navigate('Terms')}
             style={styles.termsLink}
           >
-            <Text style={styles.termsLinkText}>Terms & Conditions</Text>
+            <Text style={[styles.termsLinkText, { color: colours.inkMuted }]}>Terms & Conditions</Text>
           </TouchableOpacity>
 
           <Text style={styles.version}>Final Serve-ivor v1.0.0</Text>

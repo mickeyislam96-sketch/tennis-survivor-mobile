@@ -2,11 +2,13 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import ProfileScreen from '../screens/ProfileScreen';
 import TermsScreen from '../screens/TermsScreen';
+import SupportScreen from '../screens/SupportScreen';
 import { colours } from '../theme';
 
 export type ProfileStackParamList = {
   ProfileMain: undefined;
   Terms: undefined;
+  Support: undefined;
 };
 
 const Stack = createNativeStackNavigator<ProfileStackParamList>();
@@ -31,6 +33,11 @@ export function ProfileStack() {
         name="Terms"
         component={TermsScreen}
         options={{ title: 'Terms & Conditions' }}
+      />
+      <Stack.Screen
+        name="Support"
+        component={SupportScreen}
+        options={{ title: 'Contact Support' }}
       />
     </Stack.Navigator>
   );

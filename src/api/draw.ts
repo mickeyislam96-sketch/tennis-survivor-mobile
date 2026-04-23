@@ -38,6 +38,7 @@ export interface Deadline {
   lockAt: string | null;
   isLocked: boolean;
   isOpen: boolean;
+  perMatchLock?: boolean;
 }
 
 export function getRounds(): Promise<string[]> {

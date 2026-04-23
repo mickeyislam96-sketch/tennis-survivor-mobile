@@ -9,6 +9,7 @@ export interface Player {
   opponentName?: string | null;
   opponentPossible?: string[] | null;
   status?: string;
+  matchStartTime?: string;
 }
 
 export interface Pick {
