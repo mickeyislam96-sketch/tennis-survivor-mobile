@@ -10,18 +10,6 @@ import { colours, fonts } from '../theme';
 import * as Linking from 'expo-linking';
 import { useNotifications } from '../hooks/useNotifications';
 import { useFonts } from 'expo-font';
-import { Outfit_400Regular } from '@expo-google-fonts/outfit/400Regular';
-import { Outfit_500Medium } from '@expo-google-fonts/outfit/500Medium';
-import { Outfit_600SemiBold } from '@expo-google-fonts/outfit/600SemiBold';
-import { Outfit_700Bold } from '@expo-google-fonts/outfit/700Bold';
-import { Outfit_800ExtraBold } from '@expo-google-fonts/outfit/800ExtraBold';
-import { Fraunces_400Regular } from '@expo-google-fonts/fraunces/400Regular';
-import { Fraunces_400Regular_Italic } from '@expo-google-fonts/fraunces/400Regular_Italic';
-import { Fraunces_700Bold } from '@expo-google-fonts/fraunces/700Bold';
-import { Fraunces_700Bold_Italic } from '@expo-google-fonts/fraunces/700Bold_Italic';
-import { JetBrainsMono_400Regular } from '@expo-google-fonts/jetbrains-mono/400Regular';
-import { JetBrainsMono_500Medium } from '@expo-google-fonts/jetbrains-mono/500Medium';
-import { JetBrainsMono_700Bold } from '@expo-google-fonts/jetbrains-mono/700Bold';
 
 // Deep linking configuration
 const linking = {
@@ -81,18 +69,18 @@ function AppNavigator() {
 
 export default function App() {
   const [fontsLoaded] = useFonts({
-    Outfit_400Regular,
-    Outfit_500Medium,
-    Outfit_600SemiBold,
-    Outfit_700Bold,
-    Outfit_800ExtraBold,
-    Fraunces_400Regular,
-    Fraunces_400Regular_Italic,
-    Fraunces_700Bold,
-    Fraunces_700Bold_Italic,
-    JetBrainsMono_400Regular,
-    JetBrainsMono_500Medium,
-    JetBrainsMono_700Bold,
+    'Outfit_400Regular': require('../../assets/fonts/Outfit_400Regular.ttf'),
+    'Outfit_500Medium': require('../../assets/fonts/Outfit_500Medium.ttf'),
+    'Outfit_600SemiBold': require('../../assets/fonts/Outfit_600SemiBold.ttf'),
+    'Outfit_700Bold': require('../../assets/fonts/Outfit_700Bold.ttf'),
+    'Outfit_800ExtraBold': require('../../assets/fonts/Outfit_800ExtraBold.ttf'),
+    'Fraunces_400Regular': require('../../assets/fonts/Fraunces_400Regular.ttf'),
+    'Fraunces_400Regular_Italic': require('../../assets/fonts/Fraunces_400Regular_Italic.ttf'),
+    'Fraunces_700Bold': require('../../assets/fonts/Fraunces_700Bold.ttf'),
+    'Fraunces_700Bold_Italic': require('../../assets/fonts/Fraunces_700Bold_Italic.ttf'),
+    'JetBrainsMono_400Regular': require('../../assets/fonts/JetBrainsMono_400Regular.ttf'),
+    'JetBrainsMono_500Medium': require('../../assets/fonts/JetBrainsMono_500Medium.ttf'),
+    'JetBrainsMono_700Bold': require('../../assets/fonts/JetBrainsMono_700Bold.ttf'),
   });
 
   if (!fontsLoaded) {
